@@ -38,12 +38,12 @@ from ..flows.api import Flow
 
 
 TASK_NAMES = {
-    'cds.modules.webhooks.tasks.TranscodeVideoTask': 'file_transcode',
-    'cds.modules.webhooks.tasks.ExtractFramesTask':
+    'cds.modules.flows.tasks.TranscodeVideoTask': 'file_transcode',
+    'cds.modules.flows.tasks.ExtractFramesTask':
         'file_video_extract_frames',
-    'cds.modules.webhooks.tasks.ExtractMetadataTask':
+    'cds.modules.flows.tasks.ExtractMetadataTask':
         'file_video_metadata_extraction',
-    'cds.modules.webhooks.tasks.DownloadTask': 'file_download',
+    'cds.modules.flows.tasks.DownloadTask': 'file_download',
 }
 
 
@@ -55,10 +55,11 @@ def get_deposit_flows(deposit_id, _deleted=False):
     deposit_id = str(deposit_id)
     # do you want to involve deleted events?
     filters = []
+
     if not _deleted:
-        filters.append(FlowModel.response_code == 202)
+        filters.append(FlowModel.response_code != 410)
     # build base query
-    query = FlowModel.query.filter(FlowModel.deposit_id==deposit_id)
+    query = FlowModel.query.filter(FlowModel.deposit_id == deposit_id)
     # execute with more filters
     return query.filter(*filters).all()
 
@@ -67,7 +68,8 @@ def get_deposit_last_flow(deposit_id):
     """Get the last flow associated with a deposit."""
     try:
         # In case of many flows, return the last one
-        model = FlowModel.query.filter(FlowModel.deposit_id==deposit_id).all()[-1]
+        model = FlowModel.query.filter(
+            FlowModel.deposit_id == deposit_id).all()[-1]
         return Flow(model=model)
     except IndexError:
         # There is no Flow,
@@ -91,15 +93,14 @@ def get_tasks_status_by_task(flows, statuses=None):
     }
 
 
-def merge_tasks_status(task_statuses_1, task_statuses_2):
+def merge_tasks_status(statuses_1, statuses_2):
     """Merge task statuses."""
     statuses = {}
-    for key in set(task_statuses_1.keys()) | set(task_statuses_2.keys()):
-        statuses[key] = str(
-            FlowStatus.compute_status(
-                [task_statuses_1.get(key), task_statuses_2.get(key)]
-            )
-        )
+    task_names = set(statuses_1.keys()) | set(statuses_2.keys())
+
+    for task in task_names:
+        task_statuses_values = [statuses_1.get(task), statuses_2.get(task)]
+        statuses[task] = str(FlowStatus.compute_status(task_statuses_values))
     return statuses
 
 

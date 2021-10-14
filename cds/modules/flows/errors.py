@@ -22,11 +22,18 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Helper proxy to the state object."""
+"""Webhook errors."""
 
-from flask import current_app
-from werkzeug.local import LocalProxy
+from __future__ import absolute_import
 
-current_flows = LocalProxy(
-    lambda: current_app.extensions['cds-flows']
-)
+
+class FlowsError(Exception):
+    """General webhook error."""
+
+
+class FlowDoesNotExist(FlowsError):
+    """Raised when receiver does not exist."""
+
+
+class InvalidPayload(FlowsError):
+    """Raised when the payload is invalid."""
