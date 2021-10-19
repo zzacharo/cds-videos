@@ -50,6 +50,7 @@ from flask_security import login_user
 from invenio_access.models import ActionRoles
 from invenio_access.permissions import superuser_access
 from invenio_accounts.models import Role, User
+from invenio_app.factory import create_app
 from invenio_db import db as db_
 from invenio_deposit.permissions import action_admin_access
 from invenio_files_rest.models import Bucket, Location, ObjectVersion
@@ -68,7 +69,6 @@ from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy_utils.functions import create_database, database_exists
 from werkzeug.routing import Rule
 
-from cds.factory import create_app
 from cds.modules.deposit.api import Project, Video
 from cds.modules.records.resolver import record_resolver
 from cds.modules.redirector.views import api_blueprint as cds_api_blueprint
