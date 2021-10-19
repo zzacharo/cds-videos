@@ -266,15 +266,17 @@ class Flow(FlowWrapper):
         video_extract_task = self.create_task(
             flow=self, task_name='file_video_extract_frames'
         )
-        parallel_tasks_group.append(video_extract_task)
+        # parallel_tasks_group.append(video_extract_task)
+        self._tasks.append(video_extract_task)
         for preset_quality in all_distinct_qualities:
             transcode_task = self.create_task(flow=self,
                                               task_name='file_transcode',
                                               preset_quality=preset_quality,
                                               )
-            parallel_tasks_group.append(transcode_task)
+            # parallel_tasks_group.append(transcode_task)
+            self._tasks.append(transcode_task)
 
-        self._tasks.append(parallel_tasks_group)
+        # self._tasks.append(parallel_tasks_group)
 
     def assemble(self):
         """Build the canvas out of the task list."""

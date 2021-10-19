@@ -63,6 +63,7 @@ from werkzeug.utils import import_string
 
 
 from ..ffmpeg import ff_frames, ff_probe_all
+from ..records.utils import to_string
 from ..xrootd.utils import (file_move_xrootd, file_opener_xrootd,
                             file_size_xrootd)
 from .files import move_file_into_local, dispose_object_version
@@ -74,6 +75,10 @@ class AVCTask(Task):
     """Base class for tasks."""
 
     abstract = True
+
+    @property
+    def name(self):
+        return '.'.join([self.__module__, self.__name__])
 
     def _extract_call_arguments(self, arg_list, **kwargs):
         for name in arg_list:
@@ -285,7 +290,7 @@ class ExtractMetadataTask(AVCTask):
 
         extracted_dict = cls.get_metadata_tags(object_=object_, uri=uri)
         # Add technical information to the ObjectVersion as Tags
-        [ObjectVersionTag.create_or_update(object_, k, v)
+        [ObjectVersionTag.create_or_update(object_, k, to_string(v))
          for k, v in extracted_dict.items()
          if k in keys]
         db.session.refresh(object_)
@@ -507,7 +512,7 @@ class ExtractFramesTask(AVCTask):
         ObjectVersionTag.create(obj, 'master', str(master_id))
         ObjectVersionTag.create(obj, 'media_type', media_type)
         ObjectVersionTag.create(obj, 'context_type', context_type)
-        [ObjectVersionTag.create(obj, k, json.dumps(tags[k])) for k in tags]
+        [ObjectVersionTag.create(obj, k, to_string(tags[k])) for k in tags]
 
 
 class TranscodeVideoTask(AVCTask):
@@ -621,9 +626,9 @@ class TranscodeVideoTask(AVCTask):
             ObjectVersionTag.create(obj, 'preset_quality', preset_quality)
             ObjectVersionTag.create(obj, 'media_type', 'video')
             ObjectVersionTag.create(obj, 'context_type', 'subformat')
-            ObjectVersionTag.create(obj, 'display_aspect_ratio', json.dumps(ar))
+            ObjectVersionTag.create(obj, 'display_aspect_ratio', to_string(ar))
             for key, value in preset_config.items():
-                ObjectVersionTag.create(obj, key, json.dumps(value))
+                ObjectVersionTag.create(obj, key, to_string(value))
 
             # Information necessary for monitoring
             job_info = dict(

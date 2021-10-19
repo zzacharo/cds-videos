@@ -96,6 +96,8 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/2'
 CELERY_TASK_TRACK_STARTED = True
 # Celery accepted content types.
 CELERY_ACCEPT_CONTENT = ['json', 'msgpack', 'yaml', 'pickle']
+"""Result serialization format. Default is ``pickle``."""
+
 # Celery Beat schedule
 CELERY_BEAT_SCHEDULE = {
     'indexer': {
