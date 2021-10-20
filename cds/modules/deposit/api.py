@@ -128,7 +128,7 @@ class CDSDeposit(Deposit):
 
     def _get_files_dump(self):
         """Get files without create the record_bucket."""
-        bucket = self._bucket
+        bucket = self.bucket
         if bucket:
             return self.files_iter_cls(
                 self, bucket=bucket,
@@ -157,7 +157,7 @@ class CDSDeposit(Deposit):
     @classmethod
     def load_bucket(cls, record):
         """Load the bucket id from the record metadata."""
-        return record.get("_buckets", "").get("deposit", "")
+        return record.get("_buckets", {}).get("deposit", "")
 
     @classmethod
     def create(cls, data, id_=None, **kwargs):

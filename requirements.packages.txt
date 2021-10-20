@@ -142,7 +142,7 @@ marshmallow==2.21.0
 maxminddb-geolite2==2018.703
 maxminddb==1.5.4
 mistune==0.8.4
-msgpack==0.6.2
+msgpack==1.0.2
 nbconvert[execute]==5.6.1
 nbformat==4.4.0
 node-semver==0.1.1

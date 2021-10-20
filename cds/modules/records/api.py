@@ -202,6 +202,16 @@ class CDSRecord(Record):
         return PersistentIdentifier.get(
             pid_type='depid', pid_value=self.get('_deposit', {}).get('id'))
 
+    @classmethod
+    def dump_bucket(cls, data, bucket):
+        """Dump the bucket id into the record metadata."""
+        data["_buckets"] = {'deposit': str(bucket.id)}
+
+    @classmethod
+    def load_bucket(cls, record):
+        """Load the bucket id from the record metadata."""
+        return record.get("_buckets", {}).get("deposit", "")
+
 
 class Keyword(Record):
     """Define API for a keywords."""
