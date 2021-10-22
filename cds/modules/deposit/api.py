@@ -152,7 +152,9 @@ class CDSDeposit(Deposit):
     @classmethod
     def dump_bucket(cls, data, bucket):
         """Dump the bucket id into the record metadata."""
-        data["_buckets"] = {'deposit': str(bucket.id)}
+        _buckets = data.setdefault("_buckets", {})
+        _buckets["deposit"] = str(bucket.id)
+        data["_buckets"] = _buckets
 
     @classmethod
     def load_bucket(cls, record):

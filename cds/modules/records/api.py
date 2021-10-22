@@ -205,12 +205,14 @@ class CDSRecord(Record):
     @classmethod
     def dump_bucket(cls, data, bucket):
         """Dump the bucket id into the record metadata."""
-        data["_buckets"] = {'deposit': str(bucket.id)}
+        _buckets = data.setdefault("_buckets", {})
+        _buckets["record"] = str(bucket.id)
+        data["_buckets"] = _buckets
 
     @classmethod
     def load_bucket(cls, record):
-        """Load the bucket id from the record metadata."""
-        return record.get("_buckets", {}).get("deposit", "")
+        """Load the deposit bucket id from the record metadata."""
+        return record.get("_buckets", {}).get("record", "")
 
 
 class Keyword(Record):
