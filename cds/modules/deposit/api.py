@@ -292,6 +292,9 @@ class CDSDeposit(Deposit):
             data = self._generate_smil_file(record_id, data, snapshot)
             # dump after smil generation
             data['_files'] = self.files.dumps(bucket=snapshot.id)
+            # dump the snapshot id to the record bucket
+            # we need this to avoid creatng a new bucket on `Record.create(...)`
+            data["_buckets"]["record"] = str(snapshot.id)
             snapshot.locked = True
 
             yield data
@@ -364,7 +367,7 @@ class CDSDeposit(Deposit):
 
             bucket = record.files.bucket
             bucket.locked = False
-            self.files.bucket.sync(bucket=bucket, delete_extras=True)
+            self.files.bucket.sync(bucket=bucket, delete_extras=False)
             self._fix_tags_refs_to_master(bucket=bucket)
             # dump after fixing references
             record['_files'] = self.files.dumps(bucket=bucket.id)
@@ -857,6 +860,8 @@ class Video(CDSDeposit):
         """Rename subtitles and publish."""
         self['_files'] = self.files.dumps()
         self._rename_subtitles()
+        # dump again renamed subtitles
+        self['_files'] = self.files.dumps()
 
         from cds.modules.records.permissions import is_public
         if is_public(self, 'read'):

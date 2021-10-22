@@ -77,7 +77,16 @@ def _build_file_links(obj):
                 bucket=obj.bucket_id,
                 key=obj.key,
                 version_id=obj.version_id,
-            )))
+            )),
+        deleteFile=u'{scheme}://{host}/{api}/{bucket}/{key}'
+            .format(
+                # TODO: JSONSchema host is not the best solution here.
+                scheme=current_app.config['JSONSCHEMAS_URL_SCHEME'],
+                host=current_app.config['JSONSCHEMAS_HOST'],
+                api=current_app.config['DEPOSIT_FILES_API'].strip('/'),
+                bucket=obj.bucket_id,
+                key=obj.key,
+            ))
 
 
 def dump_generic_object(obj, data):
@@ -201,6 +210,19 @@ class CDSRecord(Record):
         """Return depid of the record."""
         return PersistentIdentifier.get(
             pid_type='depid', pid_value=self.get('_deposit', {}).get('id'))
+
+
+    @classmethod
+    def create_bucket(cls, data):
+        """Create a bucket for this record.
+
+        Check in record's metadata if there is already a bucket created.
+        This happens before we publish, while creating a snapshot of the
+        deposit's bucket.
+        """
+        if data.get("_buckets", {}).get("record"):
+            return None
+        return Bucket.create()
 
     @classmethod
     def dump_bucket(cls, data, bucket):
