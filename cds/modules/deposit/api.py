@@ -829,9 +829,13 @@ class Video(CDSDeposit):
             subtitle_obj = as_object_version(subtitle_file['version_id'])
             match = pattern.match(subtitle_file['key'])
             if match:
-                subtitle_obj.key = '{}_{}.vtt'.format(self['report_number'][0],
+                subtitle_obj_key = '{}_{}.vtt'.format(self['report_number'][0],
                                                       match.group('iso_lang'))
-                db.session.add(subtitle_obj)
+                ObjectVersion.create(
+                    bucket=subtitle_obj.bucket,
+                    key=subtitle_obj_key,
+                    _file_id=subtitle_obj.file_id)
+                subtitle_obj.remove()
 
     def _rename_master_file(self, master_file):
         """Rename master file."""
