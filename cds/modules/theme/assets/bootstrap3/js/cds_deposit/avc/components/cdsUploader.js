@@ -104,21 +104,14 @@ function cdsUploaderCtrl(
     Upload.http(args).then(
       function success(response) {
         deposit.record._cds.state.file_upload = "SUCCESS";
-        $scope.$emit(
-          "cds.deposit.status.changed",
-          deposit.id,
-          deposit.stateQueue
-        );
+        $scope.$emit("cds.deposit.status.changed", deposit.id, deposit.stateQueue);
         _success(response.config.data.key, response.data);
         // Check if needs upload
         var _subpromise;
         if (!upload.key) {
           upload.key = upload.name;
         }
-        if (
-          !upload.isAdditional &&
-          that.cdsDepositsCtrl.isVideoFile(upload.key)
-        ) {
+        if (!upload.isAdditional && that.cdsDepositsCtrl.isVideoFile(upload.key)) {
           _subpromise = Upload.http(_startWorkflow(upload, response));
         } else {
           var d = $q.defer();
@@ -135,11 +128,7 @@ function cdsUploaderCtrl(
       },
       function error(response) {
         updateMasterFileUpload("FAILURE");
-        $scope.$emit(
-          "cds.deposit.status.changed",
-          deposit.id,
-          deposit.stateQueue
-        );
+        $scope.$emit("cds.deposit.status.changed", deposit.id, deposit.stateQueue);
         promise.reject(response);
       },
       function progress(evt) {
@@ -269,10 +258,7 @@ function cdsUploaderCtrl(
     this.queue = [];
 
     // Add any files in the queue that are not completed
-    Array.prototype.push.apply(
-      this.queue,
-      _.reject(this.files, { completed: true })
-    );
+    Array.prototype.push.apply(this.queue, _.reject(this.files, { completed: true }));
 
     this.addFiles = function (_files, invalidFiles, extraHeaders) {
       // Do nothing if files array is empty
@@ -311,12 +297,16 @@ function cdsUploaderCtrl(
         file.local = !file.receiver;
         file.isAdditional = true;
         // Add any extra paramemters to the files
+        console.log("Extra headers", extraHeaders);
         if (extraHeaders) {
           file.headers = extraHeaders;
         }
-        file.headers = {
-          "X-Invenio-File-Tags": "context_type=additional_file",
-        };
+
+        if (!extraHeaders || !("X-Invenio-File-Tags" in extraHeaders)) {
+          file.headers = {
+            "X-Invenio-File-Tags": "context_type=additional_file",
+          };
+        }
       });
 
       // Find if any of the existing files has been replaced
@@ -367,9 +357,7 @@ function cdsUploaderCtrl(
 
       // Add the files to the list
       var masterFile = that.cdsDepositCtrl.findMasterFile() || {};
-      var videoFiles = _.values(
-        that.cdsDepositsCtrl.filterOutFiles(_files).videos
-      );
+      var videoFiles = _.values(that.cdsDepositsCtrl.filterOutFiles(_files).videos);
 
       if ((invalidFiles || []).length > 0) {
         // Push a notification
@@ -422,9 +410,7 @@ function cdsUploaderCtrl(
 
     // Prepare file request
     this.prepareUpload = function (file) {
-      return file.receiver
-        ? _prepareRemoteFileWebhooks(file)
-        : _prepareLocalFile(file);
+      return file.receiver ? _prepareRemoteFileWebhooks(file) : _prepareLocalFile(file);
     };
 
     this.prepareDelete = function (url) {
@@ -487,11 +473,7 @@ function cdsUploaderCtrl(
               // Inform the parents
               $scope.$emit("cds.deposit.error", response);
               // Check if the response contains the error message
-              if (
-                response.status === 400 &&
-                response.data &&
-                response.data.message
-              ) {
+              if (response.status === 400 && response.data && response.data.message) {
                 toaster.pop({
                   type: "error",
                   title: response.data.message,
@@ -543,6 +525,13 @@ function cdsUploaderCtrl(
     // i.e. jessica_jones-en.vtt
     var match = _file.name.match(/(?:.+)[_|-]([a-zA-Z]{2}).vtt/) || [];
     return match.length > 1 && match[1] in isoLanguages;
+  };
+
+  this.validateChapters = function (_file) {
+    // Check if the filename matches the pattern and is a valid ISO language
+    // i.e. jessica_jones-en.vtt
+    var match = _file.name.match(/chapters.vtt/) || [];
+    return match.length > 0;
   };
 
   this.updateFile = function (key, data, force) {

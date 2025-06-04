@@ -26,6 +26,7 @@
  */
 
 import angular from "angular";
+import { WebVTT } from "vtt.js";
 
 import { getCookie } from "../getCookie";
 
@@ -38,7 +39,7 @@ import { getCookie } from "../getCookie";
  * @description
  *    CDS record controller.
  */
-function cdsRecordController($scope, $sce, $http) {
+function cdsRecordController($scope, $sce, $http, $timeout) {
   // Parameters
 
   // Assign the controller to `vm`
@@ -53,9 +54,93 @@ function cdsRecordController($scope, $sce, $http) {
   // Record Warn - if the cdsRecord has any warning
   vm.cdsRecordWarning = null;
 
+  $scope.chapters = {};
+
   const REQUEST_HEADERS = {
     "Content-Type": "application/json",
     "X-CSRFToken": getCookie("csrftoken"),
+  };
+
+  $scope.seekTo = function (timecode) {
+    if (window.top.player) {
+      window.top.player.currentTime = timecode;
+    } else {
+      console.warn("Player not available");
+    }
+  };
+
+  $scope.parseVttFromUrl = function (url) {
+    if (Object.keys($scope.chapters).length > 0) {
+      return; // Do not parse again if already parsed
+    }
+    fetch(url)
+      .then((res) => res.text())
+      .then(function (vttText) {
+        const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+        const cues = {};
+
+        parser.oncue = function (cue) {
+          cues[cue.text] = {
+            start: cue.startTime,
+            end: cue.endTime,
+            text: cue.text,
+          };
+        };
+
+        parser.parse(vttText);
+        parser.flush();
+
+        $timeout(function () {
+          $scope.chapters = cues;
+        });
+      })
+      .catch(function (err) {
+        console.error("VTT parsing failed", err);
+      });
+  };
+
+  $scope.$watch("record", function (newVal) {
+    if (newVal) {
+      $scope.initVttLoad(newVal);
+    }
+  });
+
+  $scope.initVttLoad = function (record) {
+    console.log("Initializing VTT load for record:", record);
+    const files = record.metadata._files || [];
+
+    // Step 1: Find the VTT chapter file
+    const vttFile = files.filter(
+      (f) => f.context_type === "chapter" && f.content_type === "vtt"
+    )[0];
+
+    // Step 2: If found, load it
+    console.log("VTT file found:", vttFile);
+    if (vttFile && vttFile.links && vttFile.links.self) {
+      $scope.parseVttFromUrl(vttFile.links.self);
+    } else {
+      console.warn("No VTT chapter file found.");
+    }
+  };
+
+  $scope.getChapterTextFromImage = function (filename) {
+    // Remove extension: "Chapter_1.jpg" → "Chapter_1"
+    const base = filename.replace(/\.[^/.]+$/, "");
+
+    // Convert underscores to spaces: "Chapter_1" → "Chapter 1"
+    const title = base.replace(/_/g, " ");
+
+    return title;
+  };
+
+  $scope.secondsToMinutesSeconds = function (seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+
+    // Pad with zero if needed
+    const paddedSecs = secs < 10 ? "0" + secs : secs;
+
+    return `${minutes}:${paddedSecs}`;
   };
 
   /**
@@ -180,7 +265,7 @@ function cdsRecordController($scope, $sce, $http) {
   $scope.$on("cds.record.loading.stop", cdsRecordLoadingStop);
 }
 
-cdsRecordController.$inject = ["$scope", "$sce", "$http"];
+cdsRecordController.$inject = ["$scope", "$sce", "$http", "$timeout"];
 
 ////////////
 
@@ -265,9 +350,7 @@ cdsRecordView.$inject = ["$http"];
 
 // Setup everything
 
-angular
-  .module("cdsRecord.directives", [])
-  .directive("cdsRecordView", cdsRecordView);
+angular.module("cdsRecord.directives", []).directive("cdsRecordView", cdsRecordView);
 
 angular
   .module("cdsRecord.controllers", [])

@@ -224,12 +224,99 @@
   </table>
 </div>
 <!-- Subtitles -->
+ <!-- Chapters -->
+<div class="panel panel-default"
+
+ng-switch="($ctrl.files | findBy:'context_type':'chapter' || []).length"
+>
+<div class="panel-heading">
+  Chapters
+  <span class="pull-right">
+    <a
+      ng-if="!$ctrl.cdsDepositCtrl.isPublished()"
+      ng-click=""
+      ngf-model-options="{allowInvalid: false}"
+      ngf-change="$ctrl.addFiles($newFiles, $invalidFiles, {
+        'X-Invenio-File-Tags':'context_type=chapter',
+      })"
+      ngf-select=""
+      ngf-max-size="500GB"
+    ><i class="fa fa-plus-square"></i></a>
+  </span>
+</div>
+<div ng-switch-when="0" class="panel-body text-center" ng-if="$ctrl.cdsDepositCtrl.isPublished()">
+  <p class="text-muted text-center f7">
+    No chapters.
+  </p>
+</div>
+<div
+ngf-drag-over-class="'cds-deposit-dragover'"
+ngf-model-options="{allowInvalid: false}"
+ngf-drop=""
+ng-if="!$ctrl.cdsDepositCtrl.isPublished()"
+ngf-select=""
+ngf-change="$ctrl.addFiles($newFiles, $invalidFiles, {
+  'X-Invenio-File-Tags':'context_type=chapter',
+})"
+ngf-max-size="500GB"
+ngf-multiple="true"
+  class="panel-body text-center" ng-switch-when="0">
+  <p class="text-muted text-center f7">
+    No chapters.
+  </p>
+  <p  class="text-muted text-center f8"
+
+  >
+    Drag & Drop or <a ng-click=""
+      ngf-model-options="{allowInvalid: false}"
+      ngf-change="$ctrl.addFiles($newFiles, $invalidFiles, {
+        'X-Invenio-File-Tags':'context_type=chapter',
+      })"
+      ngf-select=""
+      ngf-max-size="500GB">select</a> <mark>.vtt</mark> files.
+      <hr class="my-10" />
+      <div class="text-muted text-left">
+        <h5 class="text-muted"><strong>Tips and suggestions</strong></h5>
+        <ul>
+          <li>Chapters filename should named <mark>chapters.vtt</mark> </li>
+        </ul>
+      </div>
+  </p>
+</div>
+<table ng-switch-default class="table">
+  <tr>
+    <th>Filename</th>
+    <th>Size</th>
+    <th class="text-center">Progress</th>
+    <th class="text-center">Actions</th>
+  </tr>
+  <tr class="sel-file" ng-repeat="f in ($ctrl.files | findBy:'context_type':'chapter' || [])">
+    <td title="{{ f.key }}">{{ f.key | limitTo:40 }} <span ng-show="f.key.length > 40">...</span></td>
+    <td>
+      <span ng-show="f.size != undefined">{{ f.size | bytesToHumanReadable }}</span>
+      <span ng-show="f.size == undefined">Unknown</span>
+    </td>
+    <td class="text-center">
+      <span ng-show="f.percentage < 100 && !f.status_failure">{{ f.percentage }} %</span>
+      <span ng-show="f.status_pending || f.status_started">Processing...</span>
+      <span ng-show="f.status_failure" class="text-danger">Error</span>
+      <span ng-show="(f.status_completed || f.percentage==100) && !f.status_failure" class="text-success">Done</span>
+    </td>
+    <td ng-show="f" class="text-center">
+      <a ng-hide="f.percentage < 100 || $ctrl.cdsDepositCtrl.isPublished()" ng-click="$ctrl.remove(f.key)">
+        <i class="fa fa-trash-o"></i>
+      </a>
+    </td>
+  </tr>
+</table>
+</div>
+<!-- Chapters -->
 <!-- Additional files -->
 <div class="panel panel-default">
   <div class="panel-heading">
     Additional files
   </div>
-  <div ng-show="($ctrl.files | removeBy:'context_type':'poster' |removeBy:'context_type':'master' | removeBy:'context_type':'subtitle' || []).length > 0"  class="panel-heading">
+  <div ng-show="($ctrl.files | removeBy:'context_type':'poster' |removeBy:'context_type':'master' | removeBy:'context_type':'subtitle' | removeBy:'context_type':'chapter' || []).length > 0"  class="panel-heading">
     <div class="row">
       <div class="col-sm-6">
         <p ng-show="$ctrl.files.length > 0" class="text-muted">
@@ -242,17 +329,17 @@
       </div>
     </div>
   </div>
-  <table ng-show="($ctrl.files | removeBy:'context_type':'poster' |removeBy:'context_type':'master' | removeBy:'context_type':'subtitle' || []).length > 0" class="table">
+  <table ng-show="($ctrl.files | removeBy:'context_type':'poster' |removeBy:'context_type':'master' | removeBy:'context_type':'subtitle' | removeBy:'context_type':'chapter' || []).length > 0" class="table">
     <tr>
       <th>Filename</th>
       <th>Size</th>
       <th class="text-center">Progress</th>
       <th class="text-center">Actions</th>
     </tr>
-    <tr ng-show="($ctrl.files | removeBy:'context_type':'poster' | removeBy:'context_type':'master' | removeBy:'context_type':'subtitle' | filter:fileSearch).length == 0">
+    <tr ng-show="($ctrl.files | removeBy:'context_type':'poster' | removeBy:'context_type':'master' | removeBy:'context_type':'subtitle' | removeBy:'context_type':'chapter' | filter:fileSearch).length == 0">
       <td colspan="4" class="text-center text-muted"> No results.</td>
     </tr>
-    <tr class="sel-file" ng-repeat="f in $ctrl.files | removeBy:'context_type':'poster' | removeBy:'context_type':'master' | removeBy:'context_type':'subtitle' | filter:fileSearch | orderBy:sortType:sortReverse | filter:fileSearch">
+    <tr class="sel-file" ng-repeat="f in $ctrl.files | removeBy:'context_type':'poster' | removeBy:'context_type':'master' | removeBy:'context_type':'subtitle' | removeBy:'context_type':'chapter' | filter:fileSearch | orderBy:sortType:sortReverse | filter:fileSearch">
       <td title="{{ f.key }}">{{ f.key | limitTo:40 }} <span ng-show="f.key.length > 40">...</span></td>
       <td>
         <span ng-show="f.size != undefined">{{ f.size | bytesToHumanReadable }}</span>

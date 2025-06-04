@@ -16,7 +16,6 @@
   </div>
   <!-- /Video Section -->
   <!-- Metadata Section -->
-  <div class="container-fluid">
     <div class="row">
       <!-- Left Column -->
       <div class="col-md-8">
@@ -64,7 +63,7 @@
                   <i class="fa fa-info-circle"></i>
                 </a>
               </h1>
-              <modal-dialog show="showTranslations" dialog-title="Available transations" >
+              <modal-dialog show="showTranslations" dialog-title="Available translations" >
                 <div ng-repeat="translation in record.metadata.translations">
                   <strong>{{translation.language | isoToLanguage}}</strong>
                   <h4>{{translation.title.title}}</h4>
@@ -165,6 +164,24 @@
                   </div>
                 </div>
                 <!-- License -->
+                <!-- Chapters -->
+                <div class="mt-20 mb-30">
+                  <div>
+                    <h4>Chapters</h4>                    
+                      <div class="cds-deposit-frame-thumbnail" ng-repeat="chapter_img in record.metadata._files | findBy:'context_type':'chapter' | findBy:'media_type':'image' || []">
+                        <a ng-click="seekTo(chapters[getChapterTextFromImage(chapter_img.key)].start)" target="_blank">
+                          <img width="100%" ng-src="{{chapter_img.links.self}}" />
+                          <label >
+                            {{secondsToMinutesSeconds(chapters[getChapterTextFromImage(chapter_img.key)].start)}} 
+                          </label>
+                          <label class="cds-deposit-frame-thumbnail-label">
+                            {{chapters[getChapterTextFromImage(chapter_img.key)].text}} 
+                          </label>
+                        </a>
+                      </div>
+                  </div>
+                </div>
+                <!-- Chapters -->
                 <div class="mt-30">
                  <ul class="list-inline pt-20 f8">
                    <li uib-tooltip-html="'Video Language'" ng-if="record.metadata.language">

@@ -48,13 +48,14 @@ from .receivers import (
 def _create_tags(obj):
     """Create additional tags for file."""
     pattern_subtitle = re.compile(r".*_([a-zA-Z]{2})\.vtt$")
+    pattern_chapters = re.compile(r"chapters.vtt$")
     pattern_poster = re.compile(r"^poster\.(jpg|png)$")
-    
+
     # Get the media_type and content_type(file ext)
     file_name = obj.key
     mimetypes.add_type("subtitle/vtt", ".vtt")
     guessed_type = mimetypes.guess_type(file_name)[0]
-    if guessed_type is None:        
+    if guessed_type is None:
         raise InvalidKeyError(description=f"Unsupported File: {file_name}")
 
     media_type = guessed_type.split("/")[0]
@@ -72,8 +73,11 @@ def _create_tags(obj):
                 ObjectVersionTag.delete(obj, "language")
             # other tags
             ObjectVersionTag.create_or_update(obj, "content_type", "vtt")
-            ObjectVersionTag.create_or_update(obj, "context_type", "subtitle")
-        # poster tag 
+            if pattern_chapters.match(file_name):
+                ObjectVersionTag.create_or_update(obj, "context_type", "chapter")
+            else:
+                ObjectVersionTag.create_or_update(obj, "context_type", "subtitle")
+        # poster tag
         elif pattern_poster.match(file_name):
             ObjectVersionTag.create_or_update(obj, "context_type", "poster")
 

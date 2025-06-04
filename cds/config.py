@@ -1256,8 +1256,10 @@ PREVIEWER_PREFERENCE = [
 # Previewer base template
 PREVIEWER_BASE_TEMPLATE = "cds_previewer/base.html"
 # Licence key and base URL for THEO player
-THEOPLAYER_LIBRARY_LOCATION = None
-THEOPLAYER_LICENSE = None
+THEOPLAYER_LIBRARY_LOCATION = (
+    "https://cdn.myth.theoplayer.com/f834759f-0690-4d15-9cf4-9eabc74f174e"
+)
+THEOPLAYER_LICENSE = ""
 # Wowza server URL for m3u8 playlist generation
 WOWZA_PLAYLIST_URL = (
     "https://wowza.cern.ch/cds/_definist_/smil:" "{filepath}/playlist.m3u8"
@@ -1633,3 +1635,7 @@ CDS_LDAP_URL = "ldap://xldap.cern.ch"
 
 # Sets the location to share the video files among the different tasks
 CDS_FILES_TMP_FOLDER = "/tmp/videos"
+
+
+# TODO: needs latest files-rest enabling range requests
+FILES_REST_ALLOW_RANGE_REQUESTS = True

@@ -116,6 +116,15 @@ class CDSPreviewRecordFile(PreviewFile):
         ]
 
     @property
+    def chapters(self):
+        """Get video's chapters."""
+        return [
+            f["links"]["self"]
+            for f in self.record["_files"]
+            if f["context_type"] == "chapter" and f["content_type"] == "vtt"
+        ]
+
+    @property
     def smil_file_object(self):
         """Get corresponding SMIL file."""
         data = self.file.dumps()

@@ -51,7 +51,10 @@
         {% endif %}
         initialRendition: 'first'
       });
+
+      window.top.player = player;
       // Preload
+      console.log("{{obj.chapters}}");
       player.source = {
         sources: [
           {
@@ -75,6 +78,13 @@
             label: 'thumbnails',
             default: true,
           },
+          {% for uri in obj.chapters %}
+            {
+                kind : 'chapters',
+                src : '{{ uri }}',
+                srclang : 'en'
+            },
+            {% endfor %}
           {% for uri, lang in obj.subtitles %}
           {
             kind: 'subtitles',
@@ -161,6 +171,8 @@
             player.addEventListener('play', onPlay);
           }
         })(player);
+        window.videos_player = player; // Make player globally available
+
       {% endif %}
     </script>
   {% endif %}
