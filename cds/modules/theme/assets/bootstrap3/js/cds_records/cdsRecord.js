@@ -55,6 +55,7 @@ function cdsRecordController($scope, $sce, $http, $timeout) {
   vm.cdsRecordWarning = null;
 
   $scope.chapters = {};
+  $scope.trasncript = {};
 
   const REQUEST_HEADERS = {
     "Content-Type": "application/json",
@@ -69,10 +70,10 @@ function cdsRecordController($scope, $sce, $http, $timeout) {
     }
   };
 
-  $scope.parseVttFromUrl = function (url) {
-    if (Object.keys($scope.chapters).length > 0) {
-      return; // Do not parse again if already parsed
-    }
+  $scope.parseVttFromUrl = function (url, type) {
+    // if (Object.keys(acc).length > 0) {
+    //   return; // Do not parse again if already parsed
+    // }
     fetch(url)
       .then((res) => res.text())
       .then(function (vttText) {
@@ -91,13 +92,37 @@ function cdsRecordController($scope, $sce, $http, $timeout) {
         parser.flush();
 
         $timeout(function () {
-          $scope.chapters = cues;
+          if (type === "chapters") {
+            $scope.chapters = cues;
+          } else if (type === "transcript") {
+            $scope.transcript = cues;
+            $scope.filteredTranscript = $scope.transcript; // default full list
+          } else {
+            console.warn("Unknown type for VTT parsing:", type);
+          }
         });
       })
       .catch(function (err) {
         console.error("VTT parsing failed", err);
       });
   };
+
+  $scope.transcriptSearch = "";
+
+  $scope.filterTranscript = function () {
+    var searchTerm = $scope.transcriptSearch.toLowerCase();
+    $scope.filteredTranscript = Object.values($scope.transcript).filter(function (
+      line
+    ) {
+      return (
+        !searchTerm || (line.text && line.text.toLowerCase().indexOf(searchTerm) !== -1)
+      );
+    });
+  };
+
+  $scope.$watch("transcript", function (newVal) {
+    if (newVal) $scope.filterTranscript();
+  });
 
   $scope.$watch("record", function (newVal) {
     if (newVal) {
@@ -117,7 +142,21 @@ function cdsRecordController($scope, $sce, $http, $timeout) {
     // Step 2: If found, load it
     console.log("VTT file found:", vttFile);
     if (vttFile && vttFile.links && vttFile.links.self) {
-      $scope.parseVttFromUrl(vttFile.links.self);
+      $scope.parseVttFromUrl(vttFile.links.self, "chapters");
+    } else {
+      console.warn("No VTT chapter file found.");
+    }
+
+    const transcriptvttFile = files.filter(
+      (f) => f.context_type === "subtitle" && f.content_type === "vtt"
+    )[0];
+
+    console.log("Transcript VTT file found:", transcriptvttFile);
+
+    // Step 2: If found, load it
+    console.log("transcriptvttFile file found:", transcriptvttFile);
+    if (transcriptvttFile && transcriptvttFile.links && transcriptvttFile.links.self) {
+      $scope.parseVttFromUrl(transcriptvttFile.links.self, "transcript");
     } else {
       console.warn("No VTT chapter file found.");
     }

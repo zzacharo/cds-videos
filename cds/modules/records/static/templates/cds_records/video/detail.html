@@ -164,6 +164,31 @@
                   </div>
                 </div>
                 <!-- License -->
+                 <!-- Transcription -->
+                <h4>Transcription</h4>
+                <input type="text"
+                    class="form-control mb-10"
+                    placeholder="Search transcript..."
+                    ng-model="transcriptSearch"
+                    ng-change="filterTranscript()">
+                <div class="panel panel-default" style="max-height: 300px; overflow-y: auto;">
+                  <div class="panel-body p-0">
+                    <ul class="list-unstyled mb-0">
+                      <li ng-repeat="line in filteredTranscript"
+                          ng-click="seekTo(line.start)"
+                          class="mb-10 transcript-line"
+                          style="cursor: pointer;">
+                        <div class="text-muted">
+                          <strong>{{ secondsToMinutesSeconds(line.start) }} - {{ secondsToMinutesSeconds(line.end) }}</strong>
+                        </div>
+                        <div class="cds-deposit-frame-thumbnail-label">
+                          {{ line.text }}
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <!-- Transcription -->
                 <!-- Chapters -->
                 <div class="mt-20 mb-30">
                   <div>
