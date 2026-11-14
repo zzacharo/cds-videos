@@ -26,6 +26,7 @@
 
 
 from functools import partial
+from urllib.parse import urljoin
 
 from flask import current_app, request, url_for
 from invenio_pidstore.errors import PIDDoesNotExistError
@@ -47,14 +48,17 @@ deposit_metadata_resolver = Resolver(
 )
 
 
-def _build_record_project_links(project_pid):
+def _api_record_url(pid_value):
+    """URL of a record in the REST API."""
+    return url_for(
+        "invenio_records_rest.recid_item", pid_value=pid_value, _external=True
+    )
+
+
+def _build_record_project_links(project_pid, api_url=_api_record_url):
     """Get project links."""
     return {
-        "project": url_for(
-            "invenio_records_rest.recid_item",
-            pid_value=project_pid.pid_value,
-            _external=True,
-        ),
+        "project": api_url(project_pid.pid_value),
         "project_html": current_app.config["RECORD_UI_ENDPOINT"].format(
             scheme=request.scheme,
             host=request.host,
@@ -77,13 +81,13 @@ def _build_deposit_project_links(deposit_project):
     return links
 
 
-def _fill_video_extra_links(record, links):
+def _fill_video_extra_links(record, links, api_url=_api_record_url):
     """Add extra links if it's a video."""
     project = None
     try:
         pid, project = record_resolver.resolve(record["_project_id"])
         # include record project links
-        links.update(**_build_record_project_links(project_pid=pid))
+        links.update(**_build_record_project_links(project_pid=pid, api_url=api_url))
     except KeyError:
         # Most likely are dealing with a project
         if is_project_record(record):
@@ -115,6 +119,24 @@ def record_link_factory(pid):
         links = default_links_factory(pid=pid)
         _, record = record_resolver.resolve(pid_value=pid.pid_value)
         _fill_video_extra_links(record=record, links=links)
+        return links
+    except Exception:
+        return {}
+
+
+def record_ui_link_factory(pid, record):
+    """The links of ``record_link_factory``, for the pages of the UI app.
+
+    The REST endpoints only exist in the API application, so their URLs are
+    built from the request (``/api/record/<pid_value>``).
+    """
+
+    def api_url(pid_value):
+        return urljoin(request.host_url, "api/record/{0}".format(pid_value))
+
+    try:
+        links = {"self": api_url(pid.pid_value)}
+        _fill_video_extra_links(record=record, links=links, api_url=api_url)
         return links
     except Exception:
         return {}

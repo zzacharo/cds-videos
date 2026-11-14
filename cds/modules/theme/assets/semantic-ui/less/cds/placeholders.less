@@ -95,6 +95,16 @@
   max-width: 26rem;
 }
 
+// The video player of the record page, until its page has loaded (its box
+// comes from ``.cds-video-iframe``)
+.ui.placeholder.cds-placeholder-player-overlay {
+  z-index: 1;
+
+  .image:not(.header) {
+    height: 100%;
+  }
+}
+
 // The video player of the deposit form, until its page has loaded
 .ui.placeholder.cds-placeholder-player-loading {
   height: 100%;

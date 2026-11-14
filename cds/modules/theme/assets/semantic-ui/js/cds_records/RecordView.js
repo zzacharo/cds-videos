@@ -21,26 +21,30 @@ import { VideoDetail } from "./video/VideoDetail";
 export function RecordView({
   type,
   recordUrl,
+  initialRecord,
   recordViewsUrl,
   mediaDownloadEventUrl,
   relatedQueryUrl,
   previewLines,
 }) {
-  const [record, setRecord] = useState(null);
+  // The record embedded in the page shows at once, else it is fetched
+  const [record, setRecord] = useState(initialRecord || null);
   const [recordViews, setRecordViews] = useState(undefined);
 
   useEffect(() => {
-    http.get(recordUrl).then(
-      (response) => setRecord(response.data),
-      () => {}
-    );
+    if (!initialRecord) {
+      http.get(recordUrl).then(
+        (response) => setRecord(response.data),
+        () => {}
+      );
+    }
     if (recordViewsUrl) {
       http.get(recordViewsUrl).then(
         (response) => setRecordViews(response.data && response.data.views),
         () => {}
       );
     }
-  }, [recordUrl, recordViewsUrl]);
+  }, [recordUrl, recordViewsUrl, initialRecord]);
 
   const logMediaDownload = (file) => {
     if (!mediaDownloadEventUrl || !record) {
@@ -76,6 +80,7 @@ export function RecordView({
 RecordView.propTypes = {
   type: PropTypes.oneOf(["video", "project"]).isRequired,
   recordUrl: PropTypes.string.isRequired,
+  initialRecord: PropTypes.object,
   recordViewsUrl: PropTypes.string,
   mediaDownloadEventUrl: PropTypes.string,
   relatedQueryUrl: PropTypes.string,
@@ -83,6 +88,7 @@ RecordView.propTypes = {
 };
 
 RecordView.defaultProps = {
+  initialRecord: undefined,
   recordViewsUrl: "",
   mediaDownloadEventUrl: "",
   relatedQueryUrl: "",

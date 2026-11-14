@@ -111,6 +111,10 @@
         data-related-query-url="{{ related_query_url }}"
         data-preview-lines="{{ config.DESCRIPTION_PREVIEW_LINES }}"
     ></div>
+    {%- if record_json %}
+    {#- The record as the API returns it, to show it without waiting #}
+    <script type="application/json" id="cds-record-json">{{ record_json|tojson }}</script>
+    {%- endif %}
   </div>
   <!-- Recent videos -->
   <div id="cds-recent-videos" class="bg-w pt-20 pb-20">

@@ -13,7 +13,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import { mountLoadingBar, onReady } from "@js/cds/search/mount";
+import { mountLoadingBar, onReady, parseJSON } from "@js/cds/search/mount";
 
 import { RecordView } from "./RecordView";
 
@@ -23,10 +23,15 @@ onReady(() => {
     return;
   }
   const data = element.dataset;
+  // The record embedded in the page (as the API returns it)
+  const embedded = document.getElementById("cds-record-json");
   ReactDOM.render(
     <RecordView
       type={data.type === "project" ? "project" : "video"}
       recordUrl={data.record}
+      initialRecord={
+        embedded ? parseJSON(embedded.textContent, undefined) : undefined
+      }
       recordViewsUrl={data.recordViews || ""}
       mediaDownloadEventUrl={data.mediaDownloadEventUrl || ""}
       relatedQueryUrl={data.relatedQueryUrl || ""}

@@ -94,7 +94,9 @@ html, body {
   height: calc((9/16)*70vw) !important;
   max-height: calc(100vh - 300px) !important;
   min-height: var(--flex854-mode-player-height) !important;
-  iframe {
+  // The placeholder of the player has the box of the player
+  iframe,
+  .cds-placeholder-player-overlay {
     max-width: 100%;
     max-height: 100%;
     position: absolute;
@@ -111,7 +113,8 @@ html, body {
 @media(max-width: 768px) {
   .cds-video-iframe {
     max-height: calc(100vh - 120px) !important;
-    iframe {
+    iframe,
+    .cds-placeholder-player-overlay {
       width: calc( ((100vh - 120px) / 9 ) * 16 )!important;
       height: calc(100vh - 120px) !important;
     }

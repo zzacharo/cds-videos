@@ -13,6 +13,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import DOMPurify from "dompurify";
+import { Placeholder } from "semantic-ui-react";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
 import { Tooltip } from "@js/cds/components/Popups";
@@ -329,6 +330,38 @@ HorizontalChapter.propTypes = {
 
 HorizontalChapter.defaultProps = { frame: null };
 
+/** The video player, with a placeholder until its page has loaded. */
+function PlayerFrame({ title, src }) {
+  const [loadedSrc, setLoadedSrc] = useState(null);
+  return (
+    <>
+      <iframe
+        title={title}
+        scrolling="no"
+        width="100%"
+        height="100%"
+        frameBorder="0"
+        src={src}
+        allowFullScreen
+        onLoad={() => setLoadedSrc(src)}
+      />
+      {loadedSrc !== src && (
+        <Placeholder
+          inverted
+          className="cds-placeholder cds-placeholder-black cds-placeholder-player-overlay"
+        >
+          <Placeholder.Image />
+        </Placeholder>
+      )}
+    </>
+  );
+}
+
+PlayerFrame.propTypes = {
+  title: PropTypes.string.isRequired,
+  src: PropTypes.string.isRequired,
+};
+
 export function VideoDetail({
   record,
   recordViews,
@@ -461,14 +494,9 @@ export function VideoDetail({
               <div className={withPanel ? "cds-row" : undefined}>
                 <div className={withPanel ? "cds-col-md-8 pt-20" : undefined}>
                   <div className="cds-video-iframe text-center">
-                    <iframe
+                    <PlayerFrame
                       title={get(metadata, "title.title") || "Video"}
-                      scrolling="no"
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
                       src={previewIframeSrc(metadata.recid, master.key)}
-                      allowFullScreen
                     />
                   </div>
                 </div>

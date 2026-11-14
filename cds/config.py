@@ -526,6 +526,7 @@ RECORDS_UI_ENDPOINTS = dict(
         pid_type="recid",
         route="/record/<pid_value>",
         template="cds_records/record_detail.html",
+        view_imp="cds.modules.records.views:record_view",
         record_class="cds.modules.records.api:CDSRecord",
     ),
     # NOTE: Disable record statistics page
