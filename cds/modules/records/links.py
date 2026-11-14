@@ -25,13 +25,26 @@
 """Links for record serialization."""
 
 
+from functools import partial
+
 from flask import current_app, request, url_for
 from invenio_pidstore.errors import PIDDoesNotExistError
+from invenio_pidstore.resolver import Resolver
+from invenio_records.api import Record
 from invenio_records_rest.links import default_links_factory
 
-from cds.modules.deposit.api import is_project_record, project_resolver
+from cds.modules.deposit.api import is_project_record
 from cds.modules.records.permissions import deposit_update_permission_factory
 from cds.modules.records.resolver import record_resolver
+
+# The deposit of a project as plain metadata. ``project_resolver`` builds a
+# ``Project``, which loads the task status and the files of all its videos,
+# while the links only need the identifier and the access of the deposit.
+deposit_metadata_resolver = Resolver(
+    pid_type="depid",
+    object_type="rec",
+    getter=partial(Record.get_record, with_deleted=True),
+)
 
 
 def _build_record_project_links(project_pid):
@@ -78,7 +91,7 @@ def _fill_video_extra_links(record, links):
     except PIDDoesNotExistError:
         # The project has not being published yet
         try:
-            pid, project = project_resolver.resolve(record["_project_id"])
+            pid, project = deposit_metadata_resolver.resolve(record["_project_id"])
         except PIDDoesNotExistError:
             pass
 
@@ -87,7 +100,9 @@ def _fill_video_extra_links(record, links):
         if project:
             links.update(
                 **_build_deposit_project_links(
-                    deposit_project=project_resolver.resolve(project["_deposit"]["id"])
+                    deposit_project=deposit_metadata_resolver.resolve(
+                        project["_deposit"]["id"]
+                    )
                 )
             )
     except (KeyError, PIDDoesNotExistError):
