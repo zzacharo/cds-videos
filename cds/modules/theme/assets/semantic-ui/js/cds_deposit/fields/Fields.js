@@ -22,6 +22,7 @@ import PropTypes from "prop-types";
 import { getIn, useFormikContext } from "formik";
 import _toPath from "lodash/toPath";
 import DOMPurify from "dompurify";
+import { Placeholder } from "semantic-ui-react";
 // Defines ``window.CKEDITOR`` (plugins and skins from ``CKEDITOR_BASEPATH``)
 import "ckeditor";
 
@@ -433,9 +434,39 @@ export function sanitizeHtml(html) {
   return DOMPurify.sanitize(html, SANITIZE_CONFIG);
 }
 
+/**
+ * The content of an editor while CKEditor loads its plugins and skin: the
+ * text is readable at once, in a box of the size of the editor.
+ */
+function CKEditorLoading({ html, height }) {
+  return (
+    <div className="cds-ckeditor-loading" aria-busy="true">
+      <div className="cds-ckeditor-loading-toolbar">
+        <Placeholder className="cds-placeholder">
+          <Placeholder.Line length="full" />
+        </Placeholder>
+      </div>
+      <div
+        className="cds-ckeditor-loading-content"
+        style={{ height }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(html || "") }}
+      />
+      <div className="cds-ckeditor-loading-bottom" />
+    </div>
+  );
+}
+
+CKEditorLoading.propTypes = {
+  html: PropTypes.string,
+  height: PropTypes.number.isRequired,
+};
+
+CKEditorLoading.defaultProps = { html: "" };
+
 export function CKEditorField({ name, label, description, required, config }) {
   const { value, error, setValue } = useDepositField(name);
   const disabled = useReadonly();
+  const [ready, setReady] = useState(false);
   const textarea = useRef(null);
   const editor = useRef(null);
   const settingData = useRef(false);
@@ -466,6 +497,7 @@ export function CKEditorField({ name, label, description, required, config }) {
       instance.setData(latest.current.value || "<p></p>", {
         callback: () => {
           settingData.current = false;
+          setReady(true);
         },
       });
     });
@@ -518,10 +550,11 @@ export function CKEditorField({ name, label, description, required, config }) {
           {label}
         </label>
       )}
+      {!ready && <CKEditorLoading html={value} height={config.height} />}
       <textarea
         ref={textarea}
         className="cds-form-control"
-        style={{ backgroundColor: "white" }}
+        style={{ backgroundColor: "white", display: "none" }}
         // The content is set when the editor is ready (one undo step, as before)
         defaultValue=""
         disabled={disabled}

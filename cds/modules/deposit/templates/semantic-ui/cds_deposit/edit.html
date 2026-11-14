@@ -49,5 +49,9 @@
      data-is-super-admin="{{ record | check_if_super_admin | lower }}"
      data-current-user-email="{{ current_user_email | lower }}"
 ></div>
+{%- if project %}
+{#- The project as the API returns it, to show the form without waiting #}
+<script type="application/json" id="cds-deposit-project">{{ project|tojson }}</script>
+{%- endif %}
 <input type="hidden" id="max-n-videos-per-project" value="{{ config.DEPOSIT_PROJECT_MAX_N_VIDEOS }}" />
 {%- endblock %}

@@ -13,6 +13,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import DOMPurify from "dompurify";
+import { Placeholder } from "semantic-ui-react";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
 
@@ -255,9 +256,14 @@ InfoDialog.propTypes = {
 
 InfoDialog.defaultProps = { children: null };
 
-/** Video preview of a deposit, or the processing spinner. */
+/**
+ * Video preview of a deposit, or the processing spinner. A placeholder
+ * covers the player until it has loaded.
+ */
 export function VideoPreview({ ctrl }) {
   const failed = ctrl.currentDepositStatus === "FAILURE";
+  const [loadedSrc, setLoadedSrc] = useState(null);
+  const loading = ctrl.previewer !== null && loadedSrc !== ctrl.previewer;
   return (
     <div
       className={[
@@ -281,7 +287,13 @@ export function VideoPreview({ ctrl }) {
           allowFullScreen
           className="cds-embed-responsive-item"
           src={ctrl.previewer}
+          onLoad={() => setLoadedSrc(ctrl.previewer)}
         />
+      )}
+      {loading && (
+        <Placeholder className="cds-placeholder cds-placeholder-player-loading">
+          <Placeholder.Image />
+        </Placeholder>
       )}
     </div>
   );

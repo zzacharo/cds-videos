@@ -909,7 +909,7 @@ export class DepositController {
 
 /** The deposit page: a project and its videos. */
 export class DepositsController {
-  constructor(config) {
+  constructor({ project, ...config }) {
     Object.assign(this, config);
     this.edit = false;
     this.master = {};
@@ -924,6 +924,10 @@ export class DepositsController {
     this.listeners = new Set();
     this.version = 0;
     this.onBeforeUnload = this.onBeforeUnload.bind(this);
+    // The project embedded in the page is shown from the first render
+    if (project) {
+      this.setMaster(project);
+    }
   }
 
   subscribe(listener) {
@@ -951,19 +955,24 @@ export class DepositsController {
 
     if (this.projectLinks) {
       this.edit = true;
-      resolveJSON(this.projectLinks.self).then(
-        (response) => {
-          this.addMaster(response.data);
-          this.initialized = true;
-          this.notify();
-        },
-        (response) => {
-          if (response.status === 403) {
-            this.permissionDenied = true;
+      if (this.initialized) {
+        // Embedded in the page: refresh it as if it had just been fetched
+        this.afterMaster();
+      } else {
+        resolveJSON(this.projectLinks.self).then(
+          (response) => {
+            this.addMaster(response.data);
+            this.initialized = true;
             this.notify();
+          },
+          (response) => {
+            if (response.status === 403) {
+              this.permissionDenied = true;
+              this.notify();
+            }
           }
-        }
-      );
+        );
+      }
     }
     window.addEventListener("beforeunload", this.onBeforeUnload);
   }
@@ -1039,6 +1048,12 @@ export class DepositsController {
     if (this.initialized) {
       return;
     }
+    this.setMaster(deposit, files);
+    this.afterMaster();
+  }
+
+  /** Set the project, without the requests of ``addMaster``. */
+  setMaster(deposit, files) {
     if (_isEmpty(deposit.metadata._files)) {
       // eslint-disable-next-line no-param-reassign
       deposit.metadata._files = files || [];
@@ -1058,6 +1073,10 @@ export class DepositsController {
     }
     this.master = deposit;
     this.initialized = true;
+  }
+
+  /** Refresh the project and its tasks once it is set. */
+  afterMaster() {
     this.fetchRecord();
     if (this.master.links.html) {
       this.handleRedirect(this.master.links.html, true);

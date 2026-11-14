@@ -45,9 +45,16 @@ function maxNumberOfVideos() {
   return element && element.value ? parseInt(element.value, 10) : 10;
 }
 
+/** The project embedded in the edit page (``#cds-deposit-project``). */
+function embeddedProject() {
+  const element = document.getElementById("cds-deposit-project");
+  return element ? parseJSON(element.textContent, undefined) : undefined;
+}
+
 function mountDeposits(element) {
   const data = element.dataset;
   const depositsCtrl = new DepositsController({
+    project: data.projectLinks ? embeddedProject() : undefined,
     projectInit: data.projectInit,
     projectLinks: data.projectLinks
       ? parseJSON(data.projectLinks, undefined)

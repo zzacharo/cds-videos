@@ -94,3 +94,58 @@
   margin-right: auto;
   max-width: 26rem;
 }
+
+// The video player of the deposit form, until its page has loaded
+.ui.placeholder.cds-placeholder-player-loading {
+  height: 100%;
+  left: 0;
+  max-width: none;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+
+  .image:not(.header) {
+    height: 100%;
+  }
+}
+
+// A description editor while CKEditor loads: the text in a box of the size
+// of the editor (moono-lisa skin and ``contents.css``)
+.cds-ckeditor-loading {
+  background-color: #fff;
+  border: 1px solid #d1d1d1;
+
+  .cds-ckeditor-loading-toolbar {
+    background-color: #f8f8f8;
+    border-bottom: 1px solid #d1d1d1;
+    height: 42px;
+    padding: 14px 8px 0;
+
+    .ui.placeholder {
+      background-color: #f8f8f8;
+      max-width: 22rem;
+
+      .line,
+      .line:after,
+      .header:after {
+        background-color: #f8f8f8;
+      }
+    }
+  }
+
+  .cds-ckeditor-loading-content {
+    color: #333;
+    font-family: sans-serif, Arial, Verdana, "Trebuchet MS";
+    font-size: 13px;
+    line-height: 1.6;
+    overflow: auto;
+    padding: 20px;
+  }
+
+  .cds-ckeditor-loading-bottom {
+    background-color: #f8f8f8;
+    border-top: 1px solid #d1d1d1;
+    height: 27px;
+  }
+}
