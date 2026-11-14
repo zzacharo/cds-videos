@@ -108,5 +108,58 @@ theme = WebpackThemeBundle(
                 "@js/cds_search_ui": "js/cds_search_ui",
             },
         ),
+        "semantic-ui": dict(
+            entry={
+                # Same entry names as the bootstrap3 theme, so that Python
+                # config values (e.g. ``PREVIEWER_BASE_JS_BUNDLES``) work with
+                # both themes.
+                "cds_theme_app": "./js/cds/app.js",
+                "cds_theme_styles": "./scss/cds/cds.scss",
+                "cds_deposit_app": "./js/cds_deposit/app.js",
+                "cds_previewer_styles": "./scss/cds_previewer/video.scss",
+                "cds_records_app": "./js/cds_records/app.js",
+                "cds_records_stats_app": "./js/cds_records/stats.js",
+                "cds_records_stats_styles": "./scss/cds_records/stats.scss",
+                "cds_search_ui_app": "./js/cds_search_ui/app.js",
+            },
+            dependencies={
+                "react": "^16.13.0",
+                "react-dom": "^16.13.0",
+                "prop-types": "^15.7.2",
+                "semantic-ui-react": "^2.1.0",
+                "semantic-ui-less": "^2.4.1",
+                # react-searchkit 3.0.0 is the last release compatible with
+                # react-overridable 0.0.3 (pinned by Invenio-Search-UI 3.0.x).
+                # ``<3.0.1`` resolves to 3.0.0 and wins the version merge
+                # against the ``^3.0.0`` of Invenio-Search-UI.
+                "react-searchkit": "<3.0.1",
+                "formik": "^2.4.0",
+                "axios": "^1.7.7",
+                "lodash": "^4.17.4",
+                "qs": "^6.8.0",
+                "d3": "^3.5.17",
+                "vtt.js": "~0.13.0",
+                "dompurify": "^2.4.5",
+                "ckeditor": "4.12.1",
+                "invenio-charts-js": "^0.2.7",
+                # Not used by CDS, but required by Invenio-Search-UI with
+                # ``^4.0.0``: the latest 4.x releases need react-overridable
+                # 1.x while Invenio-Search-UI pins react-overridable 0.0.3, so
+                # keep the last release line compatible with both.
+                "react-invenio-forms": "~4.10.0",
+            },
+            aliases={
+                "@js/cds": "js/cds",
+                "@js/cds_deposit": "js/cds_deposit",
+                "@js/cds_records": "js/cds_records",
+                "@js/cds_search_ui": "js/cds_search_ui",
+                "@scss/cds": "scss/cds",
+                # Semantic-UI theme configuration used by Invenio-Theme to
+                # build Semantic UI (``theme.js`` entry point).
+                "../../theme.config$": "less/theme.config",
+                "../../less/site": "less/site",
+                "../../less": "less",
+            },
+        ),
     },
 )

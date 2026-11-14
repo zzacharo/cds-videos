@@ -1176,7 +1176,7 @@ APP_THEME = ["bootstrap3"]
 USERPROFILES_PROFILE_TEMPLATE = "cds_theme/profile.html"
 USERPROFILES_EMAIL_ENABLED = False
 # This is needed to ensure the correct template for profile page.
-SETTINGS_TEMPLATE = "invenio_theme/page_settings.html"
+SETTINGS_TEMPLATE = "cds_theme/page_settings.html"
 
 ###############################################################################
 # OAuth

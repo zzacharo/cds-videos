@@ -1,0 +1,86 @@
+/*
+ * This file is part of CDS.
+ * Copyright (C) 2026 CERN.
+ *
+ * CDS is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ */
+
+/*
+ * ``cds_deposit_app`` entry point: the deposit page (``#cds-deposit``) and
+ * the list of the deposits (``#cds-deposit-index``).
+ */
+
+import React from "react";
+import ReactDOM from "react-dom";
+
+import {
+  mountLoadingBar,
+  mountSearchApp,
+  onReady,
+  parseJSON,
+} from "@js/cds/search/mount";
+
+import { Deposits } from "./components/Deposits";
+import {
+  DEPOSIT_INDEX_COMPONENTS,
+  DEPOSIT_INDEX_TEMPLATES,
+} from "./index/components";
+import { DepositsController } from "./store";
+
+function isIEBelowEdge() {
+  return (
+    navigator.appName === "Microsoft Internet Explorer" ||
+    Boolean(
+      navigator.userAgent.match(/Trident/) || navigator.userAgent.match(/rv:11/)
+    )
+  );
+}
+
+function maxNumberOfVideos() {
+  const element = document.getElementById("max-n-videos-per-project");
+  return element && element.value ? parseInt(element.value, 10) : 10;
+}
+
+function mountDeposits(element) {
+  const data = element.dataset;
+  const depositsCtrl = new DepositsController({
+    projectInit: data.projectInit,
+    projectLinks: data.projectLinks
+      ? parseJSON(data.projectLinks, undefined)
+      : undefined,
+    projectSchema: data.projectSchema,
+    videoInit: data.videoInit,
+    videoSchema: data.videoSchema,
+    videoExtensions: data.videoExtensions,
+    showAvcRestrictedFields: data.showAvcRestrictedFields === "true",
+    isSuperAdmin: data.isSuperAdmin === "true",
+    currentUserEmail: data.currentUserEmail,
+    maxNumberOfVideos: maxNumberOfVideos(),
+  });
+  ReactDOM.render(<Deposits depositsCtrl={depositsCtrl} />, element);
+  mountLoadingBar();
+}
+
+onReady(() => {
+  // Show a warning if IE (not supported for deposit)
+  const ieWarning = document.getElementById("cds-deposit-ie-warning");
+  if (ieWarning && isIEBelowEdge()) {
+    ieWarning.classList.remove("hidden");
+  }
+
+  const deposits = document.getElementById("cds-deposit");
+  if (deposits) {
+    mountDeposits(deposits);
+  }
+
+  const index = document.getElementById("cds-deposit-index");
+  if (index) {
+    mountSearchApp(index, {
+      components: DEPOSIT_INDEX_COMPONENTS,
+      templates: DEPOSIT_INDEX_TEMPLATES,
+    });
+  }
+});
