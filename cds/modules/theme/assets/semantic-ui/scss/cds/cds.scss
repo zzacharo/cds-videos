@@ -120,14 +120,6 @@ a {
   cursor: pointer;
 }
 
-i.sort-handle {
-  cursor: move;
-}
-
-.cds-navbar-nav-bg-opacity {
-  background-color: rgba(35, 35, 35, 0.9);
-}
-
 .field-required:after {
   content: " *";
   color: red;
@@ -141,12 +133,6 @@ i.sort-handle {
 
 .flex-item {
   flex: 1 0 auto;
-}
-
-.cds-footer-separator {
-  width: 100%;
-  height: auto;
-  border-top: 1px solid #fff;
 }
 
 .cds-navbar-brand {
@@ -165,13 +151,6 @@ i.sort-handle {
   border: 1px $bg-gray solid !important
 }
 
-.unicorn-rainbow {
-  position: absolute;
-  left: 0;
-  bottom: 80px;
-  width: 120px;
-}
-
 a.cds-anchor{
   color: black;
 }
@@ -183,29 +162,6 @@ a.cds-anchor:hover{
 /////////
 
 // /record/{recid}
-
-.cds-record-detail-bottom {
-  dd, dt, dd li {
-    line-height: 1.6; // A bit more space between elements
-  }
-}
-
-@media(min-width: 768px) {
-  .cds-record-detail-title {
-    // Add some margin on bigger screens screen
-    margin-left: 90px; // half of the default bootstrap dd element margin
-  }
-}
-
-.cds-record-detail {
-  .cds-record-detail-files {
-    .list-group-item.active {
-      a.cds-record-detail-files-filename {
-        color: #fff;
-      }
-    }
-  }
-}
 
 
 .w-100 {
@@ -323,48 +279,11 @@ a.cds-anchor:hover{
 
 // /search
 
-.line-clamp {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-
-  position: relative;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 !important;
-
-  -webkit-line-clamp : 4;
-  height: calc(1em * 1.2 * 4);
-}
-
-.line-clamp:after {
-  content: '';
-  text-align: right;
-  bottom: 0;
-  right: 0;
-  width: 25%;
-  display: block;
-  position: absolute;
-  height: calc(1em * 1.2);
-  background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.9) 75%);
-}
-
-@supports (-webkit-line-clamp: 1) {
-  .line-clamp {
-    height: auto;
-  }
-  .line-clamp:after {
-    display: none !important;
-  }
-}
 #invenio-search,
 #cds-deposit-index {
   display: flex;
   min-height: 100vh;
   flex-direction: column;
-}
-.cds-facets {
-  border-color: $bg-gray;
 }
 .cds-facets-item-link {
   display: inline-block;
@@ -406,18 +325,6 @@ a.cds-anchor:hover{
   background-color: #fff;
 }
 
-.cds-pills-center {
-  display: flex;
-  justify-content: center;
-  padding-bottom: 10px;
-}
-
-.cds-urls-textarea {
-  min-height: 150px;
-  max-height: 300px;
-  margin-bottom: 5px;
-}
-
 .cds-deposit-box {
   background-color: #fff;
   box-shadow: 0 1px 1px rgba(0,0,0,.1);
@@ -448,17 +355,6 @@ a.cds-anchor:hover{
      position:absolute;
      top:45%;
      left: 40%
-  }
-}
-
-.cds-deposit-box-upload-status {
-  margin-top: 20px;
-  display: inline-block;
-  h5 {
-    color: $gray-dark;
-  }
-  p {
-    color: $gray;
   }
 }
 
@@ -521,63 +417,8 @@ a.cds-anchor:hover{
   }
 }
 
-.cds-deposit-side-nav-item-header {
-  text-decoration: none !important;
-  display: block;
-  padding: 4px 10px;
-  border-radius: 3px;
-  color: $panel-default-text;
-  &:hover {
-    background-color: $panel-primary-heading-bg;
-    color: $panel-primary-text;
-    text-decoration: none!important;
-  }
-  &.active {
-    background-color: $panel-primary-heading-bg;
-    color: $panel-primary-text;
-    &:hover {
-      background-color: $panel-primary-heading-bg;
-      color: $panel-primary-text;
-      text-decoration: none!important;
-    }
-  }
-}
-
 .cds-deposit-dragover {
   border: 1px dashed $state-success-text;
-}
-
-.cds-deposit-dragover-error {
-  border: 1px dashed $state-danger-text;
-}
-
-.cds-deposit-side-nav-item-link {
-  display: inline-block;
-  padding: 4px 10px;
-  font-size: 16px;
-  border-radius: 3px;
-  width: 100%;
-  color: $gray;
-  &:hover {
-    background-color: $bg-gray;
-    color: $gray;
-    text-decoration: none!important;
-  }
-  &.active {
-    background: $bg-gray;
-    color: $gray;
-    &:hover {
-      background: $bg-gray;
-      color: $gray;
-      text-decoration: none!important;
-    }
-  }
-}
-
-.header-search-form {
-  &, & div {
-    width: 100%
-  }
 }
 
 #announcement.ui.message {
@@ -692,10 +533,6 @@ a.cds-anchor:hover{
   cursor: pointer;
 }
 
-.cds-deposit-listing {
-  width: 95%;
-}
-
 
 #cds-deposit-ie-warning {
   margin: 50px;
@@ -780,8 +617,7 @@ a.cds-anchor:hover{
   box-shadow: 0 1px 2px rgba(0,0,0,.1);
 }
 
-.cds-deposit-media-list-border,
-.cds-tasks-state-border {
+.cds-deposit-media-list-border {
   border-left-width: 3px !important;
   border-left-style: solid !important;
   border-top: 1px solid $bg-gray;
@@ -887,7 +723,16 @@ body footer {
 
 // Error pages
 
-.font-size-fix-on-small-screens {
+.error-page {
+  flex: 1;
+}
+
+// 404
+.cds-404 {
+  justify-content: center;
+  align-items: center;
+  flex-direction: row !important;
+  background-image: $cds-unicorn-color;
   @media (max-width: $screen-sm-min) {
     p {
       font-size: 100%;
@@ -895,28 +740,17 @@ body footer {
   }
 }
 
-.error-page {
-  flex: 1;
-}
-
-.cds-flex-center-content {
+// 500
+.cds-500 {
   justify-content: center;
   align-items: center;
   flex-direction: row !important;
-}
-
-// 404
-.cds-404 {
-  @extend .cds-flex-center-content;
-  @extend .font-size-fix-on-small-screens;
   background-image: $cds-unicorn-color;
-}
-
-// 500
-.cds-500 {
-  @extend .cds-flex-center-content;
-  @extend .font-size-fix-on-small-screens;
-  background-image: $cds-unicorn-color;
+  @media (max-width: $screen-sm-min) {
+    p {
+      font-size: 100%;
+    }
+  }
 }
 
 .glitch {
