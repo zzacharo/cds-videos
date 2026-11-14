@@ -70,9 +70,12 @@ export class UploaderController {
     this.deposit.notify();
   }
 
-  /** Upload the video file of a new video (``$postLink``). */
+  /**
+   * Upload the video file of a new video (``$postLink``). Only a video with
+   * files in the queue waits for its upload, the others show at once.
+   */
   start() {
-    if (!this.deposit.master) {
+    if (!this.deposit.master && this.queue.length > 0) {
       this.deposit.waitingUpload = true;
       this.deposit.loading = true;
       this.startTimeout = setTimeout(() => this.upload(), 1500);
