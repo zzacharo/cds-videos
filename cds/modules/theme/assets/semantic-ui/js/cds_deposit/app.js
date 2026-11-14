@@ -16,12 +16,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import {
-  mountLoadingBar,
-  mountSearchApp,
-  onReady,
-  parseJSON,
-} from "@js/cds/search/mount";
+import { mountSearchApp, onReady, parseJSON } from "@js/cds/search/mount";
 
 import { Deposits } from "./components/Deposits";
 import {
@@ -68,8 +63,9 @@ function mountDeposits(element) {
     currentUserEmail: data.currentUserEmail,
     maxNumberOfVideos: maxNumberOfVideos(),
   });
+  // No loading bar: the form shows placeholders while loading, and its own
+  // spinner during the actions
   ReactDOM.render(<Deposits depositsCtrl={depositsCtrl} />, element);
-  mountLoadingBar();
 }
 
 onReady(() => {
