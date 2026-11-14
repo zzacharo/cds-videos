@@ -41,7 +41,6 @@ include scripts/assets-watch
 include scripts/build-assets
 include scripts/bootstrap
 include scripts/celery
-include scripts/semantic-ui
 include scripts/server
 include scripts/setup
 include scripts/setup-tests
