@@ -35,7 +35,9 @@
 @import "vendor/toaster";
 @import "vendor/ngmodal";
 
-@import "~font-awesome/scss/font-awesome";
+@import "~font-awesome/less/font-awesome";
+// After the import: LESS variables are lazy, the last definition wins
+@fa-font-path: "~font-awesome/fonts";
 
 
 html, body {
@@ -68,13 +70,13 @@ html, body {
 
 .cds-deposit-panel-project {
   & > .cds-panel-heading {
-    background-color: $btn-info-bg !important;
-    color: $btn-info-color !important;
+    background-color: @btn-info-bg !important;
+    color: @btn-info-color !important;
   }
 }
 
 .cds-panel-heading-warning {
-  background-color: $brand-warning !important;
+  background-color: @brand-warning !important;
 }
 
 .cds-deposit-metadata-extraction-alert {
@@ -148,7 +150,7 @@ a {
 }
 
 .cds-border {
-  border: 1px $bg-gray solid !important
+  border: 1px @bg-gray solid !important
 }
 
 a.cds-anchor{
@@ -200,12 +202,12 @@ a.cds-anchor:hover{
   line-height: 28px;
   padding: 0 1em;
   background-color: #fff;
-  border: 1px solid $bg-gray;
+  border: 1px solid @bg-gray;
   border-radius: 3px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  color: $gray;
+  color: @gray;
   font-size: 13px;
   text-decoration: none;
   -webkit-transition: .2s;
@@ -230,8 +232,8 @@ a.cds-anchor:hover{
 }
 
 .cds-tags ul li a:hover {
-  background-color: $primary-color;
-  border: 1px solid $primary-color;
+  background-color: @primary-color;
+  border: 1px solid @primary-color;
   color: #fff;
 }
 
@@ -255,10 +257,10 @@ a.cds-anchor:hover{
     li a {
     max-width: 400px !important;
     background-color: transparent !important;
-    border: 1px solid $cds-primary-color !important;
-    color: $cds-primary-color !important;
+    border: 1px solid @cds-primary-color !important;
+    color: @cds-primary-color !important;
     &:hover {
-      background-color:lighten($cds-primary-color, 10%) !important;
+      background-color:lighten(@cds-primary-color, 10%) !important;
       color: #fff !important;
     }
   }  
@@ -271,7 +273,7 @@ a.cds-anchor:hover{
 }
 
 .cds-video-title-text {
-  color: $cds-primary-color !important;
+  color: @cds-primary-color !important;
   min-height: 3em;
 }
 
@@ -291,17 +293,17 @@ a.cds-anchor:hover{
   font-size: 16px;
   border-radius: 3px;
   width: 100%;
-  color: $gray;
+  color: @gray;
   &:hover {
-    background-color: $bg-gray;
-    color: $gray;
+    background-color: @bg-gray;
+    color: @gray;
     text-decoration: none!important;
   }
   &.cds-facets-item-link-checked {
-    background: $primary-color;
+    background: @primary-color;
     color: #fff;
     &:hover {
-      background: $primary-color;
+      background: @primary-color;
       color: #fff;
       text-decoration: none!important;
     }
@@ -312,7 +314,7 @@ a.cds-anchor:hover{
 
 .cds-login {
   height: 100vh;
-  background: $cds-navbar-form-bg;
+  background: @cds-navbar-form-bg;
 }
 
 .cds-login .cds-panel {
@@ -336,15 +338,15 @@ a.cds-anchor:hover{
 .cds-deposit-box-video-preview {
   position: relative;
   text-align: center;
-  background-color: $gray-lighter;
+  background-color: @gray-lighter;
   i {
-    color: $gray-light;
+    color: @gray-light;
   }
   &.preview-failed {
-    border: 1px solid $state-danger-border;
-    background-color: $state-danger-bg;
+    border: 1px solid @state-danger-border;
+    background-color: @state-danger-bg;
     i {
-      color: $state-danger-text;
+      color: @state-danger-text;
     }
   }
   iframe {
@@ -363,23 +365,23 @@ a.cds-anchor:hover{
   padding: 40px;
 
   .cds-deposit-box-upload-title {
-    color: $gray-dark;
+    color: @gray-dark;
   }
 
   .cds-deposit-box-upload-description {
-    color: $gray;
+    color: @gray;
   }
 
   .cds-deposit-box-upload-icon {
     font-size: 35px;
     i {
-      color: $btn-info-bg;
+      color: @btn-info-bg;
     }
   }
 
   &:hover {
     .cds-deposit-box-upload-icon i {
-      color: $primary-color;
+      color: @primary-color;
     }
   }
 }
@@ -418,7 +420,7 @@ a.cds-anchor:hover{
 }
 
 .cds-deposit-dragover {
-  border: 1px dashed $state-success-text;
+  border: 1px dashed @state-success-text;
 }
 
 #announcement.ui.message {
@@ -431,7 +433,7 @@ a.cds-anchor:hover{
 }
 
 .download-list-fade {
-  color: $gray;
+  color: @gray;
 }
 
 .download-list-container {
@@ -447,7 +449,7 @@ a.cds-anchor:hover{
     }
 
     .download-list-header-warning {
-      color: $gray;
+      color: @gray;
       outline: none;
       cursor: pointer;
     }
@@ -481,7 +483,7 @@ a.cds-anchor:hover{
   .download-list-item-checksum {
     font-size: 13px;
     margin-right: 10px;
-    color: $gray;
+    color: @gray;
     outline: none;
     cursor: pointer;
   }
@@ -495,12 +497,12 @@ a.cds-anchor:hover{
   margin-bottom: -1px;
   padding: 5px 15px;
 
-  color: $gray;
-  border: 1px solid $btn-border-color;
-  background-color: $light-color;
+  color: @gray;
+  border: 1px solid @btn-border-color;
+  background-color: @light-color;
 
   &:hover {
-    color: $gray;
+    color: @gray;
     background-color: #d4d4d4;
     text-decoration: none;
   }
@@ -526,7 +528,7 @@ a.cds-anchor:hover{
   font-size: 12px;
   margin-top: 5px;
   margin-bottom: 20px;
-  color: $gray;
+  color: @gray;
 }
 
 .cds-detail-video-link {
@@ -620,9 +622,9 @@ a.cds-anchor:hover{
 .cds-deposit-media-list-border {
   border-left-width: 3px !important;
   border-left-style: solid !important;
-  border-top: 1px solid $bg-gray;
-  border-bottom: 1px solid $bg-gray;
-  border-right: 1px solid $bg-gray;
+  border-top: 1px solid @bg-gray;
+  border-bottom: 1px solid @bg-gray;
+  border-right: 1px solid @bg-gray;
 }
 
 .cds-select-btn {
@@ -640,7 +642,7 @@ a.cds-anchor:hover{
 
 .cds-deposit-media-list {
   &:hover{
-    background-color: lighten($bg-gray, 5%);
+    background-color: lighten(@bg-gray, 5%);
   }
   .media-heading {
     display: block;
@@ -651,21 +653,21 @@ a.cds-anchor:hover{
 }
 
 .cds-tasks-error {
- border-left-color: $state-danger-text !important;
+ border-left-color: @state-danger-text !important;
 }
 .cds-tasks-success {
-  border-left-color: $state-success-text !important;
+  border-left-color: @state-success-text !important;
 }
 .cds-tasks-started {
-  border-left-color: $state-warning-text !important;
+  border-left-color: @state-warning-text !important;
 }
 
 .cds-tasks-pending {
-  border-left-color: $gray-light !important;
+  border-left-color: @gray-light !important;
 }
 
 .cds-deposit-published {
-  border-left-color: $primary-color !important;
+  border-left-color: @primary-color !important;
 }
 
 
@@ -732,8 +734,8 @@ body footer {
   justify-content: center;
   align-items: center;
   flex-direction: row !important;
-  background-image: $cds-unicorn-color;
-  @media (max-width: $screen-sm-min) {
+  background-image: @cds-unicorn-color;
+  @media (max-width: @screen-sm-min) {
     p {
       font-size: 100%;
     }
@@ -745,8 +747,8 @@ body footer {
   justify-content: center;
   align-items: center;
   flex-direction: row !important;
-  background-image: $cds-unicorn-color;
-  @media (max-width: $screen-sm-min) {
+  background-image: @cds-unicorn-color;
+  @media (max-width: @screen-sm-min) {
     p {
       font-size: 100%;
     }
@@ -826,11 +828,11 @@ body footer {
   left: 0;
   right: 0;
   z-index: 99999;
-  min-height: $navbar-height;
-  background-color: $navbar-default-bg;
+  min-height: @navbar-height;
+  background-color: @navbar-default-bg;
   border-bottom: 1px solid transparent;
-  font-size: $font-size-base;
-  line-height: $line-height-base;
+  font-size: @font-size-base;
+  line-height: @line-height-base;
 
   .cds-navbar-container {
     display: flex;
@@ -847,12 +849,12 @@ body footer {
   .cds-navbar-brand {
     display: block;
     float: left;
-    height: $navbar-height;
+    height: @navbar-height;
     padding: 21px 15px;
     margin-left: -15px;
     font-size: 25px;
     line-height: 22px;
-    color: $navbar-default-link-color;
+    color: @navbar-default-link-color;
     text-decoration: none;
     white-space: nowrap;
     small {
@@ -860,13 +862,13 @@ body footer {
     }
     &:hover,
     &:focus {
-      color: $navbar-default-link-color;
+      color: @navbar-default-link-color;
       text-decoration: none;
     }
   }
 
   img.cds-navbar-brand {
-    height: $navbar-height;
+    height: @navbar-height;
     padding: 10px 15px;
   }
 
@@ -900,8 +902,8 @@ body footer {
       position: relative;
       display: block;
       &.active > .cds-navbar-link {
-        color: $navbar-default-link-color;
-        background-color: darken($navbar-default-bg, 6.5%);
+        color: @navbar-default-link-color;
+        background-color: darken(@navbar-default-bg, 6.5%);
       }
     }
   }
@@ -910,12 +912,12 @@ body footer {
     display: block;
     padding: 21px 15px;
     line-height: 22px;
-    color: $navbar-default-link-color;
+    color: @navbar-default-link-color;
     text-decoration: none;
     cursor: pointer;
     &:hover,
     &:focus {
-      color: $navbar-default-link-hover-color;
+      color: @navbar-default-link-hover-color;
       text-decoration: none;
     }
     &.ui.dropdown {
@@ -951,7 +953,7 @@ body footer {
 .cds-active-search {
   background-color: #fff !important;
   i.icon {
-    color: $cds-primary-color !important;
+    color: @cds-primary-color !important;
   }
 }
 
@@ -959,7 +961,7 @@ body footer {
   position: relative;
   padding: 0 15px;
   transition: all 250ms ease;
-  background-color: $cds-navbar-form-bg;
+  background-color: @cds-navbar-form-bg;
   border-radius: 3px;
   max-width: 600px;
   flex: 1 1 auto;
@@ -989,7 +991,7 @@ body footer {
       height: 46px;
       width: 100%;
       padding: 6px 12px;
-      font-size: $font-size-base;
+      font-size: @font-size-base;
       font-family: inherit;
       color: #555;
       border-radius: 3px;
@@ -1010,14 +1012,14 @@ body footer {
     color: #fff;
   }
   :focus::-webkit-input-placeholder {
-    color: $cds-primary-color;
+    color: @cds-primary-color;
   }
   :focus::-moz-placeholder {
-    color: $cds-primary-color;
+    color: @cds-primary-color;
   }
 }
 
-@media (max-width: $screen-xs-max) {
+@media (max-width: @screen-xs-max) {
   .cds-navbar {
     .cds-navbar-container {
       display: block;
@@ -1056,7 +1058,7 @@ body footer {
 
 .transcript-line:hover,
 .transcript-line.active  {
-  background-color: $gray-lighter; 
+  background-color: @gray-lighter; 
 }
 
 .transcription-button {
@@ -1068,22 +1070,22 @@ body footer {
     line-height: 1.5;
   }
   border-radius: 9px !important;
-  border: 1px solid $cds-primary-color !important;
-  color: $cds-primary-color !important;
+  border: 1px solid @cds-primary-color !important;
+  color: @cds-primary-color !important;
 }
 
 .transcription-button:hover {
-  background-color: $cds-primary-color !important;
+  background-color: @cds-primary-color !important;
   color: #fff !important;
 }
 
 // Over the colors and the inset border of the Semantic UI basic buttons
 .transcription-button.ui.basic.button {
-  color: $cds-primary-color !important;
+  color: @cds-primary-color !important;
   box-shadow: none !important;
   &:hover {
     color: #fff !important;
-    background-color: $cds-primary-color !important;
+    background-color: @cds-primary-color !important;
   }
 }
 

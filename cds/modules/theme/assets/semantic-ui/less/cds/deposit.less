@@ -15,34 +15,25 @@
  * which the browsers ignored.
  */
 
-$line-height-computed: 22px;
-$font-size-small: 14px;
-$font-size-large: 20px;
-$input-height-base: 36px;
-$input-height-small: 33px;
-$input-border: #ccc;
-$input-border-focus: #66afe9;
-$input-color: #555;
-$input-bg-disabled: $gray-lighter;
-$help-block-color: lighten($text-color, 25%);
+@line-height-computed: 22px;
+@font-size-small: 14px;
+@font-size-large: 20px;
+@input-height-base: 36px;
+@input-height-small: 33px;
+@input-border: #ccc;
+@input-border-focus: #66afe9;
+@input-color: #555;
+@input-bg-disabled: @gray-lighter;
+@help-block-color: lighten(@text-color, 25%);
 
-@mixin cds-clearfix {
-  &:before,
-  &:after {
-    content: " ";
-    display: table;
-  }
-  &:after {
-    clear: both;
-  }
-}
+// ``.cds-clearfix();`` uses the ``.cds-clearfix`` class of layout.less
 
 /* Panels (``panel panel-default``) */
 
 .cds-panel {
-  margin-bottom: $line-height-computed;
+  margin-bottom: @line-height-computed;
   background-color: #fff;
-  border: 1px solid $panel-default-border;
+  border: 1px solid @panel-default-border;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
   > .cds-table {
     margin-bottom: 0;
@@ -66,9 +57,9 @@ $help-block-color: lighten($text-color, 25%);
 
 .cds-panel-heading {
   padding: 10px 15px;
-  color: $panel-default-text;
-  background-color: $panel-default-heading-bg;
-  border-bottom: 1px solid $panel-default-border;
+  color: @panel-default-text;
+  background-color: @panel-default-heading-bg;
+  border-bottom: 1px solid @panel-default-border;
   > .cds-row {
     margin-left: -15px;
     margin-right: -15px;
@@ -85,26 +76,26 @@ $help-block-color: lighten($text-color, 25%);
 
 .cds-panel-body {
   padding: 15px;
-  @include cds-clearfix;
+  .cds-clearfix();
 }
 
 .cds-panel-danger {
-  border-color: $state-danger-border;
+  border-color: @state-danger-border;
   > .cds-panel-heading {
-    color: $state-danger-text;
-    background-color: $state-danger-bg;
-    border-color: $state-danger-border;
+    color: @state-danger-text;
+    background-color: @state-danger-bg;
+    border-color: @state-danger-border;
   }
 }
 
 .cds-panel-heading-warning {
-  background-color: $brand-warning !important;
+  background-color: @brand-warning !important;
 }
 
 /* The video panel heading stays visible when scrolling (``hl-sticky``) */
 .cds-deposit-panel > .cds-sticky-heading {
   position: sticky;
-  top: $navbar-height + 1px;
+  top: @navbar-height + 1px;
   z-index: 10;
 }
 
@@ -113,14 +104,14 @@ $help-block-color: lighten($text-color, 25%);
 .cds-table {
   width: 100%;
   max-width: 100%;
-  margin-bottom: $line-height-computed;
+  margin-bottom: @line-height-computed;
   background-color: transparent;
   border-collapse: collapse;
   border-spacing: 0;
   > tbody > tr > th,
   > tbody > tr > td {
     padding: 8px;
-    line-height: $line-height-base;
+    line-height: @line-height-base;
     vertical-align: top;
     border-top: 1px solid #ddd;
   }
@@ -133,7 +124,7 @@ $help-block-color: lighten($text-color, 25%);
   }
   > tbody > tr.warning > td,
   > tbody > tr.warning > th {
-    background-color: $state-warning-bg;
+    background-color: @state-warning-bg;
   }
 }
 
@@ -151,7 +142,7 @@ $help-block-color: lighten($text-color, 25%);
 
 .cds-table > tbody > tr > td.info,
 .cds-table > tbody > tr > th.info {
-  background-color: $state-info-bg;
+  background-color: @state-info-bg;
 }
 
 /* List groups in panels */
@@ -195,20 +186,20 @@ input:where([type="checkbox"], [type="radio"]) {
 .form-control {
   display: block;
   width: 100%;
-  height: $input-height-base;
+  height: @input-height-base;
   padding: 6px 12px;
   font-family: inherit;
-  font-size: $font-size-base;
-  line-height: $line-height-base;
-  color: $input-color;
+  font-size: @font-size-base;
+  line-height: @line-height-base;
+  color: @input-color;
   background-color: #fff;
   background-image: none;
-  border: 1px solid $input-border;
+  border: 1px solid @input-border;
   border-radius: 0;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
   transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
   &:focus {
-    border-color: $input-border-focus;
+    border-color: @input-border-focus;
     outline: 0;
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
   }
@@ -219,7 +210,7 @@ input:where([type="checkbox"], [type="radio"]) {
   &[disabled],
   &[readonly],
   fieldset[disabled] & {
-    background-color: $input-bg-disabled;
+    background-color: @input-bg-disabled;
     opacity: 1;
   }
   &[disabled],
@@ -235,16 +226,16 @@ textarea.form-control {
 
 .cds-form-control.input-sm,
 .form-control.input-sm {
-  height: $input-height-small;
+  height: @input-height-small;
   padding: 5px 10px;
-  font-size: $font-size-small;
+  font-size: @font-size-small;
   line-height: 1.5;
 }
 
 .form-group-lg .form-control {
   height: 49px;
   padding: 10px 16px;
-  font-size: $font-size-large;
+  font-size: @font-size-large;
   line-height: 1.3333333;
 }
 
@@ -261,9 +252,9 @@ textarea.form-control {
   right: 0;
   z-index: 2;
   display: block;
-  width: $input-height-base;
-  height: $input-height-base;
-  line-height: $input-height-base;
+  width: @input-height-base;
+  height: @input-height-base;
+  line-height: @input-height-base;
   text-align: center;
   pointer-events: none;
 }
@@ -278,22 +269,22 @@ textarea.form-control {
   display: block;
   margin-top: 5px;
   margin-bottom: 10px;
-  color: $help-block-color;
+  color: @help-block-color;
 }
 
 .has-error {
   .help-block,
   .control-label,
   label {
-    color: $state-danger-text;
+    color: @state-danger-text;
   }
   .cds-form-control,
   .form-control {
-    border-color: $state-danger-text;
+    border-color: @state-danger-text;
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
     &:focus {
-      border-color: darken($state-danger-text, 10%);
-      box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px lighten($state-danger-text, 20%);
+      border-color: darken(@state-danger-text, 10%);
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px lighten(@state-danger-text, 20%);
     }
   }
 }
@@ -304,7 +295,7 @@ textarea.form-control {
   margin-top: 10px;
   margin-bottom: 10px;
   label {
-    min-height: $line-height-computed;
+    min-height: @line-height-computed;
     padding-left: 20px;
     margin-bottom: 0;
     font-weight: normal !important;
@@ -335,9 +326,9 @@ fieldset {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    min-height: $input-height-base;
+    min-height: @input-height-base;
     padding: 6px 12px;
-    line-height: $line-height-base;
+    line-height: @line-height-base;
     color: #333;
     background-color: #fff;
     border: 1px solid #ccc;
@@ -371,10 +362,10 @@ fieldset {
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
       > .item {
         padding: 3px 20px !important;
-        line-height: $line-height-base;
+        line-height: @line-height-base;
         color: #333;
         border-top: 0;
-        font-size: $font-size-base;
+        font-size: @font-size-base;
         &:hover {
           background-color: #f5f5f5;
         }
@@ -382,7 +373,7 @@ fieldset {
         &.selected {
           color: #fff;
           font-weight: normal;
-          background-color: $brand-primary;
+          background-color: @brand-primary;
         }
       }
     }
@@ -423,12 +414,12 @@ a.cds-list-group-item {
 .cds-list-group-item.active:focus {
   z-index: 2;
   color: #fff;
-  background-color: $brand-primary;
-  border-color: $brand-primary;
+  background-color: @brand-primary;
+  border-color: @brand-primary;
 }
 
 .cds-panel-group {
-  margin-bottom: $line-height-computed;
+  margin-bottom: @line-height-computed;
   .cds-panel {
     margin-bottom: 0;
   }
@@ -457,7 +448,7 @@ a.cds-list-group-item {
 
 .cds-close {
   float: right;
-  font-size: ($font-size-base * 1.5);
+  font-size: (@font-size-base * 1.5);
   font-weight: bold;
   line-height: 1;
   color: #000;
@@ -482,7 +473,7 @@ a.cds-list-group-item {
 
 .cds-alert {
   padding: 15px;
-  margin-bottom: $line-height-computed;
+  margin-bottom: @line-height-computed;
   border: 1px solid transparent;
   h4 {
     margin-top: 0;
@@ -508,27 +499,27 @@ a.cds-list-group-item {
 }
 
 .cds-alert-success {
-  color: $state-success-text;
-  background-color: $state-success-bg;
-  border-color: $state-success-border;
+  color: @state-success-text;
+  background-color: @state-success-bg;
+  border-color: @state-success-border;
 }
 
 .cds-alert-info {
-  color: $state-info-text;
-  background-color: $state-info-bg;
-  border-color: $state-info-border;
+  color: @state-info-text;
+  background-color: @state-info-bg;
+  border-color: @state-info-border;
 }
 
 .cds-alert-warning {
-  color: $state-warning-text;
-  background-color: $state-warning-bg;
-  border-color: $state-warning-border;
+  color: @state-warning-text;
+  background-color: @state-warning-bg;
+  border-color: @state-warning-border;
 }
 
 .cds-alert-danger {
-  color: $state-danger-text;
-  background-color: $state-danger-bg;
-  border-color: $state-danger-border;
+  color: @state-danger-text;
+  background-color: @state-danger-bg;
+  border-color: @state-danger-border;
 }
 
 /* Progress bars (``progress``) */
@@ -543,8 +534,8 @@ a.cds-list-group-item {
 }
 
 .cds-progress {
-  height: $line-height-computed;
-  margin-bottom: $line-height-computed;
+  height: @line-height-computed;
+  margin-bottom: @line-height-computed;
   overflow: hidden;
   background-color: #f5f5f5;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -554,11 +545,11 @@ a.cds-list-group-item {
   float: left;
   width: 0%;
   height: 100%;
-  font-size: $font-size-small;
-  line-height: $line-height-computed;
+  font-size: @font-size-small;
+  line-height: @line-height-computed;
   color: #fff;
   text-align: center;
-  background-color: $brand-primary;
+  background-color: @brand-primary;
   box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   transition: width 0.6s ease;
 }
@@ -581,11 +572,11 @@ a.cds-list-group-item {
 }
 
 .cds-progress-bar-success {
-  background-color: $brand-success;
+  background-color: @brand-success;
 }
 
 .cds-progress-bar-danger {
-  background-color: $brand-danger;
+  background-color: @brand-danger;
 }
 
 .cds-row > .cds-progress {
@@ -599,14 +590,14 @@ a.cds-list-group-item {
   display: inline-block;
   min-width: 10px;
   padding: 3px 7px;
-  font-size: $font-size-small;
+  font-size: @font-size-small;
   font-weight: bold;
   line-height: 1;
   color: #fff;
   text-align: center;
   white-space: nowrap;
   vertical-align: middle;
-  background-color: $gray-light;
+  background-color: @gray-light;
   border-radius: 10px;
 }
 
@@ -640,7 +631,7 @@ a.cds-list-group-item {
   padding: 30px 15px;
   margin-bottom: 30px;
   color: inherit;
-  background-color: $gray-lighter;
+  background-color: @gray-lighter;
   h1 {
     color: inherit;
   }
@@ -649,7 +640,7 @@ a.cds-list-group-item {
     font-size: 24px;
     font-weight: 200;
   }
-  @media (min-width: $screen-sm-min) {
+  @media (min-width: @screen-sm-min) {
     padding: 48px 60px;
     h1 {
       font-size: 72px;
@@ -674,29 +665,29 @@ a.cds-list-group-item {
 .cds-login {
   .ui.small.button {
     padding: 6px 11px;
-    font-size: $font-size-small;
+    font-size: @font-size-small;
     line-height: 1.5;
   }
   .ui.large.button {
     padding: 11px 17px;
-    font-size: $font-size-large;
+    font-size: @font-size-large;
     line-height: 1.3333333;
   }
 }
 
 .ui.button.cds-btn-info {
-  color: $btn-info-color;
-  background-color: $btn-info-bg;
+  color: @btn-info-color;
+  background-color: @btn-info-bg;
   &:hover,
   &:focus {
-    color: $btn-info-color;
-    background-color: darken($btn-info-bg, 10%);
+    color: @btn-info-color;
+    background-color: darken(@btn-info-bg, 10%);
   }
 }
 
 .cds-btn-xs {
   padding: 1px 5px;
-  font-size: $font-size-small;
+  font-size: @font-size-small;
   line-height: 1.5;
 }
 
@@ -717,7 +708,7 @@ a.cds-list-group-item {
     background-color: #fff;
   }
   .cds-alert-info.ui.message {
-    margin: 0 0 $line-height-computed;
+    margin: 0 0 @line-height-computed;
   }
   .add-button {
     cursor: pointer;
@@ -734,7 +725,7 @@ a.cds-list-group-item {
 }
 
 .cds-deposit-thumbnail-pad {
-  @include cds-clearfix;
+  .cds-clearfix();
 }
 
 /* Calendar of the date fields (angular-strap ``bs-datepicker``) */
@@ -753,7 +744,7 @@ a.cds-list-group-item {
   width: 320px;
   padding: 5px 0;
   margin: 2px 0 0;
-  font-size: $font-size-base;
+  font-size: @font-size-base;
   text-align: left;
   background-color: #fff;
   background-clip: padding-box;
@@ -779,9 +770,9 @@ a.cds-list-group-item {
   width: 100%;
   padding: 6px 12px;
   margin: 0;
-  font-size: $font-size-base;
+  font-size: @font-size-base;
   font-weight: normal;
-  line-height: $line-height-base;
+  line-height: @line-height-base;
   text-align: center;
   white-space: nowrap;
   cursor: pointer;
@@ -797,13 +788,13 @@ a.cds-list-group-item {
     width: auto;
   }
   &.today {
-    color: $btn-info-color;
-    background-color: darken($btn-info-bg, 10%);
+    color: @btn-info-color;
+    background-color: darken(@btn-info-bg, 10%);
   }
   &.active {
     color: #fff;
-    background-color: $brand-primary;
-    border-color: darken($brand-primary, 5%);
+    background-color: @brand-primary;
+    border-color: darken(@brand-primary, 5%);
     .text-muted {
       color: #fff;
     }
@@ -813,13 +804,13 @@ a.cds-list-group-item {
 /* Autocompletes (``ui-select`` with the bootstrap theme) */
 
 #cds-deposit .ui.selection.dropdown.cds-async-select {
-  height: $input-height-base;
-  min-height: $input-height-base;
+  height: @input-height-base;
+  min-height: @input-height-base;
   // ui-select overlapped the next element by one pixel
   margin-bottom: -1px;
   padding: 6px 30px 6px 12px;
-  font-size: $font-size-base;
-  line-height: $line-height-base;
+  font-size: @font-size-base;
+  line-height: @line-height-base;
   color: #333;
   border: 1px solid #ccc;
   border-radius: 0;
@@ -834,7 +825,7 @@ a.cds-list-group-item {
   }
   > input.search {
     padding: 6px 30px 6px 12px;
-    line-height: $line-height-base;
+    line-height: @line-height-base;
   }
   > .cds-caret {
     position: absolute;
@@ -847,12 +838,12 @@ a.cds-list-group-item {
   }
   &.active,
   &.visible {
-    border-color: $input-border-focus;
+    border-color: @input-border-focus;
     box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
   }
   &.disabled {
     opacity: 1;
-    background-color: $input-bg-disabled;
+    background-color: @input-bg-disabled;
   }
   .menu {
     border: 1px solid rgba(0, 0, 0, 0.15) !important;
@@ -861,13 +852,13 @@ a.cds-list-group-item {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
     > .item {
       padding: 3px 20px !important;
-      font-size: $font-size-base;
-      line-height: $line-height-base;
+      font-size: @font-size-base;
+      line-height: @line-height-base;
       border-top: 0;
       &.selected,
       &:hover {
         color: #fff;
-        background-color: $brand-primary;
+        background-color: @brand-primary;
         small {
           color: #fff;
         }
@@ -894,7 +885,7 @@ a.cds-list-group-item {
     display: inline-block;
     margin: 0 3px 3px 0;
     padding: 1px 5px;
-    font-size: $font-size-small;
+    font-size: @font-size-small;
     font-weight: normal;
     line-height: 1.5;
     color: #333;
@@ -955,19 +946,19 @@ a.cds-list-group-item {
 }
 
 .ui.action.input.cds-input-group > input {
-  height: $input-height-base;
+  height: @input-height-base;
   padding: 6px 12px;
-  font-size: $font-size-base;
-  line-height: $line-height-base;
-  color: $input-color;
-  border: 1px solid $input-border;
+  font-size: @font-size-base;
+  line-height: @line-height-base;
+  color: @input-color;
+  border: 1px solid @input-border;
   border-radius: 0;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
   &::placeholder {
     color: #999;
   }
   &:focus {
-    border-color: $input-border-focus;
+    border-color: @input-border-focus;
     border-radius: 0;
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
   }
@@ -977,8 +968,8 @@ a.cds-list-group-item {
   display: block;
   margin-left: -1px;
   padding: 6px 12px;
-  font-size: $font-size-base;
-  line-height: $line-height-base;
+  font-size: @font-size-base;
+  line-height: @line-height-base;
   border: 1px solid #ccc;
   box-shadow: none;
   &:hover,

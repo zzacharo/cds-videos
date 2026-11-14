@@ -13,13 +13,13 @@
 
 // The placeholder draws its shapes by masking a shimmer with the background
 // color, so on a dark section the mask has to match that section.
-@mixin cds-placeholder-mask($color) {
+.cds-placeholder-mask(@color) {
   &,
   > :before,
   .image.header:after,
   .line,
   .line:after {
-    background-color: $color;
+    background-color: @color;
   }
 }
 
@@ -43,11 +43,11 @@
 }
 
 .ui.inverted.placeholder.cds-placeholder-dark {
-  @include cds-placeholder-mask($cds-primary-color);
+  .cds-placeholder-mask(@cds-primary-color);
 }
 
 .ui.inverted.placeholder.cds-placeholder-black {
-  @include cds-placeholder-mask(#000);
+  .cds-placeholder-mask(#000);
 }
 
 // The featured video player of the home page, a 16:9 box as tall as the

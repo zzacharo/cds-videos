@@ -63,7 +63,6 @@ recursive-include cds *.png
 recursive-include cds *.png
 recursive-include cds *.overrides
 recursive-include cds *.py
-recursive-include cds *.scss
 recursive-include cds *.smil
 recursive-include cds *.svg
 recursive-include cds *.ttf

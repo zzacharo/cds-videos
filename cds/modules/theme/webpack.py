@@ -45,12 +45,16 @@ theme = WebpackThemeBundle(
         "semantic-ui": dict(
             entry={
                 "cds_theme_app": "./js/cds/app.js",
-                "cds_theme_styles": "./scss/cds/cds.scss",
+                "cds_theme_styles": "./less/cds/cds.less",
                 "cds_deposit_app": "./js/cds_deposit/app.js",
-                "cds_previewer_styles": "./scss/cds_previewer/video.scss",
+                "cds_previewer_styles": "./less/cds_previewer/video.less",
                 "cds_records_app": "./js/cds_records/app.js",
                 "cds_records_stats_app": "./js/cds_records/stats.js",
-                "cds_records_stats_styles": "./scss/cds_records/stats.scss",
+                # The styles of invenio-charts-js are SCSS, built by sass-loader
+                "cds_records_stats_styles": [
+                    "invenio-charts-js/src/styles/styles.scss",
+                    "./less/cds_records/stats.less",
+                ],
                 "cds_search_ui_app": "./js/cds_search_ui/app.js",
             },
             dependencies={
@@ -84,7 +88,7 @@ theme = WebpackThemeBundle(
                 "@js/cds_deposit": "js/cds_deposit",
                 "@js/cds_records": "js/cds_records",
                 "@js/cds_search_ui": "js/cds_search_ui",
-                "@scss/cds": "scss/cds",
+                "@less/cds": "less/cds",
                 # Semantic-UI theme configuration used by Invenio-Theme to
                 # build Semantic UI (``theme.js`` entry point).
                 "../../theme.config$": "less/theme.config",
