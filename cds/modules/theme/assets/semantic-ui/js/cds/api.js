@@ -40,6 +40,10 @@ function notify() {
 
 export function onPendingRequestsChange(listener) {
   listeners.add(listener);
+  // The loading bar is mounted after the first requests of the page started
+  if (pending > 0) {
+    listener(pending);
+  }
   return () => listeners.delete(listener);
 }
 

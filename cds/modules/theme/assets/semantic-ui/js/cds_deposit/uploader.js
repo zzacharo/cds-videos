@@ -165,6 +165,8 @@ export class UploaderController {
     return http
       .request({
         ...args,
+        // The video panel shows the progress of the upload
+        ignoreLoadingBar: true,
         // The file is the raw body of the request
         transformRequest: [(data) => data],
         onUploadProgress: (evt) => {
@@ -189,7 +191,10 @@ export class UploaderController {
             !upload.isAdditional &&
             this.depositsCtrl.isVideoFile(upload.key)
           ) {
-            workflow = http.request(this.startWorkflow(upload, response));
+            workflow = http.request({
+              ...this.startWorkflow(upload, response),
+              ignoreLoadingBar: true,
+            });
           } else {
             workflow = Promise.resolve();
           }

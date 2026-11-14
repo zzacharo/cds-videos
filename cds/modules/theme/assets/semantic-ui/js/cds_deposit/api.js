@@ -86,9 +86,13 @@ function toResponse(error) {
   return { data: {}, status: 0, error };
 }
 
-/** Make a request, resolving and rejecting with the response. */
-export function action(url, method, payload, headers) {
+/**
+ * Make a request, resolving and rejecting with the response. ``options``
+ * are extra request options, like ``ignoreLoadingBar``.
+ */
+export function action(url, method, payload, headers, options) {
   const config = {
+    ...(options || {}),
     url,
     method,
     headers: { "Content-Type": "application/json", ...(headers || {}) },

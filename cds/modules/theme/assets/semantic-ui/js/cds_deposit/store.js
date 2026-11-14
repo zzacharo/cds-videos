@@ -66,6 +66,9 @@ import {
 /* ``angular-local-storage`` prefix of the deposit app. */
 const STORAGE_PREFIX = "cdsDeposit";
 
+/* Requests made in the background, without the loading bar. */
+const BACKGROUND = { ignoreLoadingBar: true };
+
 /* Fields edited by the forms of each deposit type. */
 export const FORM_FIELDS = {
   project: [
@@ -292,7 +295,8 @@ export class DepositController {
 
   getTaskFeedback(flowId) {
     const url = urlBuilder.taskFeedback({ flowId });
-    return action(url, "GET", {})
+    // Polled in the background, the tasks show their own status
+    return action(url, "GET", {}, undefined, BACKGROUND)
       .then((response) => _flatten(response.data, true))
       .catch((e) => _flatten(e.data, true));
   }
@@ -1002,26 +1006,33 @@ export class DepositsController {
     return deposit;
   }
 
-  /** Fetch the latest record data (``cds.deposit.metadata.update.<id>``). */
+  /**
+   * Fetch the latest record data (``cds.deposit.metadata.update.<id>``), in
+   * the background: the form is already shown.
+   */
   fetchRecord() {
-    action(this.master.links.self || this.projectLinks.self, "GET", {}).then(
-      (response) => {
-        const metadata = response.data.metadata;
-        // Each deposit is updated on its own (``cds.deposit.metadata.update.<id>``)
-        [metadata].concat(metadata.videos || []).forEach((depositMetadata) => {
-          const deposit = this.deposits[depositMetadata._deposit.id];
-          if (deposit) {
-            try {
-              deposit.updateDeposit(depositMetadata);
-              deposit.fetchFlowTasksStatuses();
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.error(error);
-            }
+    action(
+      this.master.links.self || this.projectLinks.self,
+      "GET",
+      {},
+      undefined,
+      BACKGROUND
+    ).then((response) => {
+      const metadata = response.data.metadata;
+      // Each deposit is updated on its own (``cds.deposit.metadata.update.<id>``)
+      [metadata].concat(metadata.videos || []).forEach((depositMetadata) => {
+        const deposit = this.deposits[depositMetadata._deposit.id];
+        if (deposit) {
+          try {
+            deposit.updateDeposit(depositMetadata);
+            deposit.fetchFlowTasksStatuses();
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error(error);
           }
-        });
-      }
-    );
+        }
+      });
+    });
   }
 
   addMaster(deposit, files) {
