@@ -67,11 +67,8 @@
             {%- block search_error %}
               <div data-cds-search-component="error" data-message="{{ _('Search failed.') }}"></div>
             {%- endblock search_error %}
-            {%- block search_loading %}
-              <div class="text-center t-w">
-                <div data-cds-search-component="loading" data-message="{{ _('Loading...') }}"></div>
-              </div>
-            {%- endblock search_loading %}
+            {#- The results show placeholders while loading #}
+            {%- block search_loading %}{%- endblock search_loading %}
             {%- block search_results %}
               <div data-cds-search-component="results" data-template="small"></div>
             {%- endblock search_results %}

@@ -13,6 +13,7 @@ import PropTypes from "prop-types";
 
 import { SearchLoading, SearchResults } from "../search/components";
 import { SearchApp } from "../search/SearchApp";
+import { VIDEO_PLACEHOLDERS } from "./Placeholders";
 import { VIDEO_TEMPLATES } from "./VideoTemplates";
 
 /**
@@ -31,6 +32,11 @@ export function SearchWidget({
 }) {
   const Template =
     typeof template === "string" ? VIDEO_TEMPLATES[template] : template;
+  // Without a loading indicator the widget stays empty until the results
+  const placeholder =
+    withLoading && typeof template === "string"
+      ? VIDEO_PLACEHOLDERS[template]
+      : null;
   const loading = <SearchLoading message={loadingMessage} />;
   return (
     <SearchApp
@@ -41,12 +47,13 @@ export function SearchWidget({
     >
       {children}
       {withLoading &&
+        !placeholder &&
         (centeredLoading ? (
           <div className="text-center">{loading}</div>
         ) : (
           loading
         ))}
-      <SearchResults template={Template} />
+      <SearchResults template={Template} placeholder={placeholder} />
     </SearchApp>
   );
 }

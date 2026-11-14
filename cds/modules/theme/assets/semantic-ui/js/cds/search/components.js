@@ -23,8 +23,14 @@ import {
   isoToLanguage,
   joinArray,
 } from "../utils";
+import { FacetsPlaceholder, LinePlaceholder } from "../components/Placeholders";
 import { useSearch } from "./hooks";
 import { d3, renderHistogram } from "./rangeHistogram";
+
+/** True until the first results (or error) of the search arrive. */
+export function isFirstLoad(state) {
+  return !state.results.hits && !state.error;
+}
 
 /** ``invenio-search-loading`` */
 export function SearchLoading({ message, className }) {
@@ -63,6 +69,10 @@ export function SearchError() {
 export function SearchCount() {
   const [state] = useSearch();
   const total = state.results.hits ? state.results.hits.total : undefined;
+  // The count of the previous search would describe the placeholders
+  if (state.loading || isFirstLoad(state)) {
+    return <LinePlaceholder className="cds-placeholder-count" />;
+  }
   if (total === 0) {
     const params = state.currentParams || {};
     return (
@@ -133,6 +143,13 @@ function toggleFacet(state, store, key, value) {
 export function SearchFacets() {
   const [state, store] = useSearch();
   const results = state.results;
+  if (isFirstLoad(state)) {
+    return (
+      <div className="cds-search-facets bg-w pt-30">
+        <FacetsPlaceholder count={3} />
+      </div>
+    );
+  }
   if (!(results.hits && results.hits.total > 0)) {
     return null;
   }
@@ -201,6 +218,9 @@ export function SearchFacets() {
 /** Facets of the deposit list (cds_deposit/search/facets.html). */
 export function DepositSearchFacets() {
   const [state, store] = useSearch();
+  if (isFirstLoad(state)) {
+    return <FacetsPlaceholder count={3} />;
+  }
   const aggregations = state.results.aggregations || {};
   return (
     <>
@@ -535,10 +555,25 @@ SearchPagination.propTypes = {
 
 SearchPagination.defaultProps = { variant: "cds", adjacentSize: 4 };
 
-/** ``invenio-search-results`` rendering a template component. */
-export function SearchResults({ template: Template, ...props }) {
+/**
+ * ``invenio-search-results`` rendering a template component, or its
+ * placeholder while the search is loading.
+ */
+export function SearchResults({
+  template: Template,
+  placeholder: TemplatePlaceholder,
+  ...props
+}) {
   const [state] = useSearch();
+  if (TemplatePlaceholder && (state.loading || isFirstLoad(state))) {
+    return <TemplatePlaceholder args={state.args} />;
+  }
   return <Template results={state.results} args={state.args} {...props} />;
 }
 
-SearchResults.propTypes = { template: PropTypes.elementType.isRequired };
+SearchResults.propTypes = {
+  template: PropTypes.elementType.isRequired,
+  placeholder: PropTypes.elementType,
+};
+
+SearchResults.defaultProps = { placeholder: null };

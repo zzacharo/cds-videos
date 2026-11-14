@@ -17,6 +17,7 @@ import { DialogModal } from "@js/cds/components/DialogModal";
 import { ToasterContainer } from "@js/cds/components/Toaster";
 
 import { saveAllPartial } from "../actions";
+import { DepositFormPlaceholder } from "./DepositFormPlaceholder";
 import { DropZone } from "./DropZone";
 import { ProjectPanel } from "./ProjectPanel";
 import { VideoPanel } from "./VideoPanel";
@@ -222,9 +223,14 @@ export function Deposits({ depositsCtrl }) {
   return (
     <>
       <ToasterContainer timeout={8000} />
-      {!depositsCtrl.initialized && !depositsCtrl.permissionDenied && (
-        <Intro depositsCtrl={depositsCtrl} />
-      )}
+      {!depositsCtrl.initialized &&
+        !depositsCtrl.permissionDenied &&
+        (depositsCtrl.projectLinks ? (
+          // An existing project is loading
+          <DepositFormPlaceholder />
+        ) : (
+          <Intro depositsCtrl={depositsCtrl} />
+        ))}
       {depositsCtrl.initialized && (
         <div id={metadata._deposit.id}>
           {/* Top status bar */}

@@ -15,6 +15,7 @@
 
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import { Placeholder } from "semantic-ui-react";
 
 import { useSearch } from "@js/cds/search/hooks";
 import { formatDate, wordsSplit } from "@js/cds/utils";
@@ -277,4 +278,37 @@ export const DEPOSIT_INDEX_COMPONENTS = {
 
 export const DEPOSIT_INDEX_TEMPLATES = {
   deposit: DepositResults,
+};
+
+/** Placeholder of the deposit list while it is loading. */
+export function DepositResultsPlaceholder() {
+  return (
+    <div aria-busy="true">
+      {[0, 1, 2, 3].map((index) => (
+        <ul key={index} className="cds-deposit-media-list media-list">
+          <li className="media mb-10 pa-5 cds-deposit-media-list-border">
+            <div className="media-body">
+              <Placeholder
+                fluid
+                className="cds-placeholder cds-placeholder-deposit"
+              >
+                <Placeholder.Header>
+                  <Placeholder.Line length="medium" />
+                </Placeholder.Header>
+                <Placeholder.Paragraph>
+                  <Placeholder.Line length="long" />
+                  {index % 2 === 1 && <Placeholder.Line length="long" />}
+                  <Placeholder.Line length="very short" />
+                </Placeholder.Paragraph>
+              </Placeholder>
+            </div>
+          </li>
+        </ul>
+      ))}
+    </div>
+  );
+}
+
+export const DEPOSIT_INDEX_PLACEHOLDERS = {
+  deposit: DepositResultsPlaceholder,
 };

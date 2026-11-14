@@ -36,9 +36,6 @@
           <div class="cds-col-md-5">
             <div data-cds-search-component="depositsearchbar" data-placeholder="{{ _('Search uploads...') }}"></div>
           </div>
-          <div class="cds-col-md-2">
-            <div data-cds-search-component="loading" data-message="{{ _('Loading...') }}"></div>
-          </div>
           <div class="cds-col-md-7 text-right">
              {%- set sort_options = config.get('DEPOSIT_REST_SORT_OPTIONS', {}).get(config.DEPOSIT_UI_SEARCH_INDEX) %}
              <span data-cds-search-component="sort"

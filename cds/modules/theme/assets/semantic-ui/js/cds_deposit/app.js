@@ -26,6 +26,7 @@ import {
 import { Deposits } from "./components/Deposits";
 import {
   DEPOSIT_INDEX_COMPONENTS,
+  DEPOSIT_INDEX_PLACEHOLDERS,
   DEPOSIT_INDEX_TEMPLATES,
 } from "./index/components";
 import { DepositsController } from "./store";
@@ -81,6 +82,7 @@ onReady(() => {
     mountSearchApp(index, {
       components: DEPOSIT_INDEX_COMPONENTS,
       templates: DEPOSIT_INDEX_TEMPLATES,
+      placeholders: DEPOSIT_INDEX_PLACEHOLDERS,
     });
   }
 });

@@ -20,6 +20,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 
 import { LoadingBar } from "../components/LoadingBar";
+import { VIDEO_PLACEHOLDERS } from "../components/Placeholders";
 import { SearchBarSuggestions } from "../components/SearchBarSuggestions";
 import { VIDEO_TEMPLATES } from "../components/VideoTemplates";
 import {
@@ -109,7 +110,7 @@ function HeaderSearchBar({ data }) {
 /**
  * Components available to the placeholders, keyed by the value of
  * ``data-cds-search-component``. Each one gets the ``dataset`` of its
- * placeholder and the result templates.
+ * placeholder, the result templates and their loading placeholders.
  */
 export const SEARCH_COMPONENTS = {
   searchbar: HeaderSearchBar,
@@ -125,8 +126,11 @@ export const SEARCH_COMPONENTS = {
   ),
   error: () => <SearchError />,
   loading: ({ data }) => <SearchLoading message={data.message || ""} />,
-  results: ({ data, templates }) => (
-    <SearchResults template={templates[data.template]} />
+  results: ({ data, templates, placeholders }) => (
+    <SearchResults
+      template={templates[data.template]}
+      placeholder={placeholders[data.template]}
+    />
   ),
   pagination: ({ data }) => (
     <SearchPagination
@@ -141,26 +145,36 @@ export const SEARCH_COMPONENTS = {
  * placeholders.
  *
  * ``options.components`` and ``options.templates`` extend the default
- * components and result templates.
+ * components and result templates. ``options.placeholders`` extend the
+ * Semantic UI placeholders shown instead of a result template while the
+ * search is loading (keyed like the templates).
  */
 export function mountSearchApp(root, options = {}) {
   const data = root.dataset;
   const components = { ...SEARCH_COMPONENTS, ...(options.components || {}) };
   const templates = { ...VIDEO_TEMPLATES, ...(options.templates || {}) };
+  const placeholders = {
+    ...VIDEO_PLACEHOLDERS,
+    ...(options.placeholders || {}),
+  };
 
-  const placeholders = Array.from(
+  const elements = Array.from(
     root.querySelectorAll("[data-cds-search-component]")
   );
   // The server rendered content is replaced by the components
-  placeholders.forEach((element) => {
+  elements.forEach((element) => {
     element.innerHTML = "";
   });
-  const portals = placeholders
+  const portals = elements
     .map((element, index) => {
       const Component = components[element.dataset.cdsSearchComponent];
       if (!Component) return null;
       return ReactDOM.createPortal(
-        <Component data={element.dataset} templates={templates} />,
+        <Component
+          data={element.dataset}
+          templates={templates}
+          placeholders={placeholders}
+        />,
         element,
         `cds-search-portal-${index}`
       );
