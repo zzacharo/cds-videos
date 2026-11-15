@@ -89,6 +89,10 @@ theme = WebpackThemeBundle(
                 "@js/cds_records": "js/cds_records",
                 "@js/cds_search_ui": "js/cds_search_ui",
                 "@less/cds": "less/cds",
+                # react-searchkit points bundlers to its CommonJS build (its
+                # ``browser`` field), which pulls a second copy of axios and
+                # can not be tree shaken: use its ES modules build.
+                "react-searchkit$": "node_modules/react-searchkit/dist/esm/index.js",
                 # Semantic-UI theme configuration used by Invenio-Theme to
                 # build Semantic UI (``theme.js`` entry point).
                 "../../theme.config$": "less/theme.config",
