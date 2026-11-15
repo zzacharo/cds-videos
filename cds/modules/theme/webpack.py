@@ -84,6 +84,10 @@ theme = WebpackThemeBundle(
                 # against the ``^3.0.0`` of Invenio-Search-UI.
                 "react-searchkit": "<3.0.1",
                 "formik": "^2.4.0",
+                # The deposit form state, same ranges as react-searchkit
+                "redux": "^4.0.0",
+                "react-redux": "^7.2.0",
+                "redux-thunk": "^2.3.0",
                 "axios": "^1.7.7",
                 "lodash": "^4.17.4",
                 "qs": "^6.8.0",

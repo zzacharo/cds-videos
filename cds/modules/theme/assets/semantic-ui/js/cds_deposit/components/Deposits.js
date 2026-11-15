@@ -10,74 +10,55 @@
 
 /* The deposit page: a project and its videos (``deposits.html``). */
 
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { Provider, useDispatch } from "react-redux";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
 import { ToasterContainer } from "@js/cds/components/Toaster";
 
-import { saveAllPartial } from "../actions";
+import {
+  useConfig,
+  useLoading,
+  usePage,
+  useProjectRecord,
+  useStarted,
+} from "../state/hooks";
+import { addVideoFiles, initPage } from "../state/page";
+import { startDeposit } from "../state/tasks";
 import { DepositFormPlaceholder } from "./DepositFormPlaceholder";
 import { DropZone } from "./DropZone";
 import { ProjectPanel } from "./ProjectPanel";
 import { VideoPanel } from "./VideoPanel";
 import { TaskList } from "./common";
 
-/** Re-render on every change of the controllers. */
-export function useControllerVersion(depositsCtrl) {
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
-  useEffect(() => depositsCtrl.subscribe(forceUpdate), [depositsCtrl]);
+function Project({ id }) {
+  useStarted(startDeposit, id);
+  return <ProjectPanel id={id} />;
 }
 
-/** Start the deposit controller with its view, stop it when removed. */
-function useStarted(ctrl) {
-  useEffect(() => {
-    ctrl.start();
-    return () => ctrl.stop();
-  }, [ctrl]);
-}
+Project.propTypes = { id: PropTypes.string.isRequired };
 
-function Project({ depositsCtrl }) {
-  const master = depositsCtrl.master;
-  const ctrl = depositsCtrl.deposit(master.metadata, master.links, true);
-  useStarted(ctrl);
-  useEffect(() => {
-    // ``cds.deposit.project.saveAll``
-    // eslint-disable-next-line no-param-reassign
-    depositsCtrl.onSaveAll = () => saveAllPartial(ctrl);
-    return () => {
-      // eslint-disable-next-line no-param-reassign
-      depositsCtrl.onSaveAll = null;
-    };
-  }, [depositsCtrl, ctrl]);
-  return <ProjectPanel ctrl={ctrl} />;
-}
-
-Project.propTypes = { depositsCtrl: PropTypes.object.isRequired };
-
-function Video({ depositsCtrl, child, index, onTranscodeInfo }) {
-  const ctrl = depositsCtrl.deposit(child, child.links, false);
-  useStarted(ctrl);
-  return (
-    <VideoPanel ctrl={ctrl} index={index} onTranscodeInfo={onTranscodeInfo} />
-  );
+function Video({ id, index, onTranscodeInfo }) {
+  useStarted(startDeposit, id);
+  return <VideoPanel id={id} index={index} onTranscodeInfo={onTranscodeInfo} />;
 }
 
 Video.propTypes = {
-  depositsCtrl: PropTypes.object.isRequired,
-  child: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
   index: PropTypes.number.isRequired,
   onTranscodeInfo: PropTypes.func.isRequired,
 };
 
-function UploadBox({ depositsCtrl, title }) {
-  const extensions = depositsCtrl.videoExtensions;
+function UploadBox({ title }) {
+  const dispatch = useDispatch();
+  const extensions = useConfig().videoExtensions;
   return (
     <DropZone
       multiple
       accept={extensions}
       pattern={extensions}
-      onFiles={(files, invalid) => depositsCtrl.addFiles(files, invalid)}
+      onFiles={(files, invalid) => dispatch(addVideoFiles(files, invalid))}
     >
       <div className="cds-deposit-box-upload-wrapper text-center">
         <p className="cds-deposit-box-upload-icon">
@@ -99,12 +80,10 @@ function UploadBox({ depositsCtrl, title }) {
   );
 }
 
-UploadBox.propTypes = {
-  depositsCtrl: PropTypes.object.isRequired,
-  title: PropTypes.string.isRequired,
-};
+UploadBox.propTypes = { title: PropTypes.string.isRequired };
 
-function Intro({ depositsCtrl }) {
+function Intro() {
+  const { videoExtensions } = useConfig();
   return (
     <div>
       <div className="cds-container-fluid py-20">
@@ -131,8 +110,7 @@ function Intro({ depositsCtrl }) {
                       video subformats might take long.
                     </li>
                     <li>
-                      Supported video formats are{" "}
-                      <mark>{depositsCtrl.videoExtensions}</mark>
+                      Supported video formats are <mark>{videoExtensions}</mark>
                     </li>
                     <li>
                       For best results, we recommend uploading{" "}
@@ -155,10 +133,7 @@ function Intro({ depositsCtrl }) {
                 </p>
               </div>
               <hr className="my-30" />
-              <UploadBox
-                depositsCtrl={depositsCtrl}
-                title="Click here to select videos to upload"
-              />
+              <UploadBox title="Click here to select videos to upload" />
             </div>
           </div>
         </div>
@@ -166,8 +141,6 @@ function Intro({ depositsCtrl }) {
     </div>
   );
 }
-
-Intro.propTypes = { depositsCtrl: PropTypes.object.isRequired };
 
 function TranscodingHelp({ open, onClose }) {
   return (
@@ -206,32 +179,25 @@ TranscodingHelp.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
-export function Deposits({ depositsCtrl }) {
-  useControllerVersion(depositsCtrl);
+function DepositPage() {
+  useStarted(initPage);
+  const page = usePage();
+  const metadata = useProjectRecord();
+  const loading = useLoading();
+  const max = useConfig().maxNumberOfVideos;
   const [helpShown, setHelpShown] = useState(false);
-  useEffect(() => {
-    depositsCtrl.init();
-    return () => depositsCtrl.destroy();
-  }, [depositsCtrl]);
-
-  const master = depositsCtrl.master;
-  const metadata = master.metadata || {};
-  const videos = metadata.videos || [];
-  const max = depositsCtrl.maxNumberOfVideos;
+  const videos = page.videoIds;
   const showHelp = () => setHelpShown(true);
 
   return (
     <>
       <ToasterContainer timeout={8000} />
-      {!depositsCtrl.initialized &&
-        !depositsCtrl.permissionDenied &&
-        (depositsCtrl.projectLinks ? (
-          // An existing project is loading
-          <DepositFormPlaceholder />
-        ) : (
-          <Intro depositsCtrl={depositsCtrl} />
-        ))}
-      {depositsCtrl.initialized && (
+      {page.status === "loading" && (
+        // An existing project is loading
+        <DepositFormPlaceholder />
+      )}
+      {page.status === "new" && <Intro />}
+      {page.status === "ready" && (
         <div id={metadata._deposit.id}>
           {/* Top status bar */}
           <div className="cds-deposit-avc-overall-status mb-20">
@@ -249,7 +215,7 @@ export function Deposits({ depositsCtrl }) {
                   <i
                     className="fa fa-spinner fa-spin fa-fw"
                     style={{
-                      display: depositsCtrl.loading ? undefined : "none",
+                      display: loading ? undefined : "none",
                     }}
                   />
                 </div>
@@ -263,12 +229,11 @@ export function Deposits({ depositsCtrl }) {
           <div className="cds-container-fluid">
             <div className="cds-row">
               <div className="cds-col-md-12">
-                <Project depositsCtrl={depositsCtrl} />
-                {videos.map((child, index) => (
+                <Project id={metadata._deposit.id} />
+                {videos.map((id, index) => (
                   <Video
-                    key={child._deposit.id}
-                    depositsCtrl={depositsCtrl}
-                    child={child}
+                    key={id}
+                    id={id}
                     index={index}
                     onTranscodeInfo={showHelp}
                   />
@@ -292,10 +257,7 @@ export function Deposits({ depositsCtrl }) {
                       id="cds-deposit-main-uploader"
                       className="mt-40 cds-deposit-panel cds-deposit-box"
                     >
-                      <UploadBox
-                        depositsCtrl={depositsCtrl}
-                        title="Click here to select more videos to upload"
-                      />
+                      <UploadBox title="Click here to select more videos to upload" />
                     </div>
                   )}
                 {videos.length >= max && (
@@ -316,13 +278,13 @@ export function Deposits({ depositsCtrl }) {
                     </div>
                   </div>
                 )}
-                {depositsCtrl.duplicateVideos.length > 0 && (
+                {page.duplicateVideos.length > 0 && (
                   <div className="cds-alert cds-alert-danger">
                     <p>
                       Multiple deposits with the same filename are not allowed:
                     </p>
                     <ul>
-                      {depositsCtrl.duplicateVideos.map((file) => (
+                      {page.duplicateVideos.map((file) => (
                         <li key={file}>{file}</li>
                       ))}
                     </ul>
@@ -333,7 +295,7 @@ export function Deposits({ depositsCtrl }) {
           </div>
         </div>
       )}
-      {depositsCtrl.permissionDenied && (
+      {page.status === "denied" && (
         <div>
           <div className="cds-container">
             <div className="cds-row">
@@ -346,4 +308,13 @@ export function Deposits({ depositsCtrl }) {
   );
 }
 
-Deposits.propTypes = { depositsCtrl: PropTypes.object.isRequired };
+/** The deposit page with its store. */
+export function Deposits({ store }) {
+  return (
+    <Provider store={store}>
+      <DepositPage />
+    </Provider>
+  );
+}
+
+Deposits.propTypes = { store: PropTypes.object.isRequired };

@@ -18,6 +18,11 @@ import { Placeholder } from "semantic-ui-react";
 import { DialogModal } from "@js/cds/components/DialogModal";
 
 import { orderTasks, progressClass, progressIcon, taskRepr } from "../filters";
+import {
+  useDeposit,
+  useDepositActions,
+  useDepositStatus,
+} from "../state/hooks";
 
 /** Style hiding an element, like ``ng-show``. */
 export function show(condition) {
@@ -184,8 +189,10 @@ TaskList.propTypes = {
 TaskList.defaultProps = { state: {}, small: false, itemClassName: null };
 
 /** Validation errors returned by the server (``alert alert-danger``). */
-export function ErrorAlerts({ ctrl }) {
-  return ctrl.alerts.map((alert, index) => (
+export function ErrorAlerts({ id }) {
+  const { alerts } = useDeposit(id);
+  const { dismissAlert } = useDepositActions(id);
+  return alerts.map((alert, index) => (
     // eslint-disable-next-line react/no-array-index-key
     <div className="alerts" key={index}>
       {alert.errors && alert.errors.length > 0 && alert.type === "danger" && (
@@ -197,7 +204,7 @@ export function ErrorAlerts({ ctrl }) {
             <button
               type="button"
               className="cds-close"
-              onClick={() => ctrl.dismissAlert(index)}
+              onClick={() => dismissAlert(index)}
             >
               <span aria-hidden="true">&times;</span>
               <span className="sr-only">Close</span>
@@ -220,7 +227,7 @@ export function ErrorAlerts({ ctrl }) {
   ));
 }
 
-ErrorAlerts.propTypes = { ctrl: PropTypes.object.isRequired };
+ErrorAlerts.propTypes = { id: PropTypes.string.isRequired };
 
 /** Trusted HTML of the record, sanitized. */
 export function Html({ html, as: Component, className }) {
@@ -265,10 +272,11 @@ InfoDialog.defaultProps = { children: null };
  * Video preview of a deposit, or the processing spinner. A placeholder
  * covers the player until it has loaded.
  */
-export function VideoPreview({ ctrl }) {
-  const failed = ctrl.currentDepositStatus === "FAILURE";
+export function VideoPreview({ id }) {
+  const { previewer } = useDeposit(id);
+  const failed = useDepositStatus(id).status === "FAILURE";
   const [loadedSrc, setLoadedSrc] = useState(null);
-  const loading = ctrl.previewer !== null && loadedSrc !== ctrl.previewer;
+  const loading = previewer !== null && loadedSrc !== previewer;
   return (
     <div
       className={[
@@ -280,19 +288,19 @@ export function VideoPreview({ ctrl }) {
     >
       <div
         className="cds-deposit-box-video-preview-with-icon"
-        style={{ display: ctrl.previewer ? "none" : undefined }}
+        style={{ display: previewer ? "none" : undefined }}
       >
         {!failed && <i className="fa fa-spinner fa-spin fa-2x fa-fw" />}
         {failed && <i className="fa fa-remove fa-2x" />}
       </div>
-      {ctrl.previewer !== null && (
+      {previewer !== null && (
         <iframe
           title="Video preview"
           scrolling="no"
           allowFullScreen
           className="cds-embed-responsive-item"
-          src={ctrl.previewer}
-          onLoad={() => setLoadedSrc(ctrl.previewer)}
+          src={previewer}
+          onLoad={() => setLoadedSrc(previewer)}
         />
       )}
       {loading && (
@@ -304,4 +312,4 @@ export function VideoPreview({ ctrl }) {
   );
 }
 
-VideoPreview.propTypes = { ctrl: PropTypes.object.isRequired };
+VideoPreview.propTypes = { id: PropTypes.string.isRequired };

@@ -25,7 +25,7 @@ import {
   DEPOSIT_INDEX_PLACEHOLDERS,
   DEPOSIT_INDEX_TEMPLATES,
 } from "./index/components";
-import { DepositsController } from "./store";
+import { createDepositStore } from "./state/store";
 
 function isIEBelowEdge() {
   return (
@@ -49,8 +49,7 @@ function embeddedProject() {
 
 function mountDeposits(element) {
   const data = element.dataset;
-  const depositsCtrl = new DepositsController({
-    project: data.projectLinks ? embeddedProject() : undefined,
+  const config = {
     projectInit: data.projectInit,
     projectLinks: data.projectLinks
       ? parseJSON(data.projectLinks, undefined)
@@ -63,10 +62,14 @@ function mountDeposits(element) {
     isSuperAdmin: data.isSuperAdmin === "true",
     currentUserEmail: data.currentUserEmail,
     maxNumberOfVideos: maxNumberOfVideos(),
-  });
+  };
+  const store = createDepositStore(
+    config,
+    data.projectLinks ? embeddedProject() : undefined
+  );
   // No loading bar: the form shows placeholders while loading, and its own
   // spinner during the actions
-  ReactDOM.render(<Deposits depositsCtrl={depositsCtrl} />, element);
+  ReactDOM.render(<Deposits store={store} />, element);
 }
 
 onReady(() => {

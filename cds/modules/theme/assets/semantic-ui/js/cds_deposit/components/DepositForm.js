@@ -9,79 +9,92 @@
  */
 
 /*
- * Formik form of a deposit: the values are the form fields of the record,
- * kept in sync with the deposit controller in both directions.
+ * Formik form of a deposit: the values are the form fields of its record.
+ * The fields write to the record, and the form takes the changes made to
+ * the record by the page (``formSync``) or is reset to it (``formReset``).
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { Formik, useFormikContext } from "formik";
-import _isEqual from "lodash/isEqual";
+import { useDispatch, useSelector, useStore } from "react-redux";
 
 import { DepositFormContext } from "../fields/Fields";
 import { validateProject, validateVideo } from "../fields/validation";
+import { setFormErrors } from "../state/deposit";
+import { formValues } from "../state/records";
 
-function FormBridge({ ctrl, children }) {
+/** Run ``effect`` when ``counter`` changes, not when the form is created. */
+function useCounterEffect(counter, effect) {
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    effect();
+    // Only the counter triggers it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [counter]);
+}
+
+function FormBridge({ id, type, children }) {
   const formik = useFormikContext();
+  const dispatch = useDispatch();
+  const store = useStore();
+  const formSync = useSelector((state) => state.deposits[id].formSync);
+  const formReset = useSelector((state) => state.deposits[id].formReset);
+  const values = () => formValues(store.getState().deposits[id].record, type);
 
-  // The controller pushes programmatic changes to the form
-  // eslint-disable-next-line no-param-reassign
-  ctrl.formApi = {
-    setValues: (values) => formik.setValues(values, true),
-    resetForm: (values) => {
-      formik.resetForm({ values });
-      formik.validateForm(values);
-    },
-  };
-
-  useEffect(
-    () => () => {
-      // eslint-disable-next-line no-param-reassign
-      ctrl.formApi = null;
-    },
-    [ctrl]
-  );
+  useCounterEffect(formSync, () => formik.setValues(values(), true));
+  useCounterEffect(formReset, () => {
+    const next = values();
+    formik.resetForm({ values: next });
+    formik.validateForm(next);
+  });
 
   useEffect(() => {
-    if (!_isEqual(ctrl.formErrors, formik.errors)) {
-      // eslint-disable-next-line no-param-reassign
-      ctrl.formErrors = formik.errors;
-      ctrl.notify();
-    }
-  }, [ctrl, formik.errors]);
+    dispatch(setFormErrors(id, formik.errors));
+  }, [dispatch, id, formik.errors]);
 
+  const context = useMemo(() => ({ id, type }), [id, type]);
   return (
-    <DepositFormContext.Provider value={{ ctrl }}>
+    <DepositFormContext.Provider value={context}>
       {children}
     </DepositFormContext.Provider>
   );
 }
 
 FormBridge.propTypes = {
-  ctrl: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
+  type: PropTypes.string.isRequired,
   children: PropTypes.node,
 };
 
 FormBridge.defaultProps = { children: null };
 
-export function DepositForm({ ctrl, children }) {
-  const [initialValues] = useState(() => ctrl.formValues());
-  const validate =
-    ctrl.depositType === "project" ? validateProject : validateVideo;
+export function DepositForm({ id, children }) {
+  const store = useStore();
+  const type = useSelector((state) => state.deposits[id].type);
+  const [initialValues] = useState(() =>
+    formValues(store.getState().deposits[id].record, type)
+  );
   return (
     <Formik
       initialValues={initialValues}
-      validate={validate}
+      validate={type === "project" ? validateProject : validateVideo}
       validateOnMount
       onSubmit={() => {}}
     >
-      <FormBridge ctrl={ctrl}>{children}</FormBridge>
+      <FormBridge id={id} type={type}>
+        {children}
+      </FormBridge>
     </Formik>
   );
 }
 
 DepositForm.propTypes = {
-  ctrl: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
   children: PropTypes.node,
 };
 

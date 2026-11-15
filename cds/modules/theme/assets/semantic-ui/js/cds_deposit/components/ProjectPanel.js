@@ -13,7 +13,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-import { actionHandler, deleteVideo, saveAllPartial } from "../actions";
 import { EditorsField, RestrictionsBox } from "../fields/Access";
 import { CategoryField, TypeField } from "../fields/CategoryType";
 import {
@@ -29,50 +28,63 @@ import {
   SCHEMA_DESCRIPTIONS,
 } from "../fields/options";
 import { TranslationsField } from "../fields/Groups";
+import {
+  useAnyVideoPublished,
+  useConfig,
+  useDeposit,
+  useDepositActions,
+  useLoading,
+} from "../state/hooks";
+import { isPublished } from "../state/records";
+import { isInvalid } from "../state/selectors";
 import { ErrorAlerts, Html, InfoDialog, Tabs } from "./common";
+import { urlBuilder } from "../constants";
 import { DepositForm } from "./DepositForm";
 import { ProjectUploader } from "./Uploaders";
 
-function ProjectActions({ ctrl }) {
-  const depositsCtrl = ctrl.depositsCtrl;
-  const status = ctrl.record._deposit.status;
+function ProjectActions({ id }) {
+  const deposit = useDeposit(id);
+  const actions = useDepositActions(id);
+  const loading = useLoading();
+  const status = deposit.record._deposit.status;
+  const actionLoading = deposit.pending > 0;
   return (
     <>
       {status !== "published" && (
         <button
           type="button"
           className="ui small green button"
-          disabled={ctrl.isPristine() || depositsCtrl.loading}
-          onClick={() => saveAllPartial(ctrl)}
+          disabled={!deposit.dirty || loading}
+          onClick={actions.saveAll}
         >
-          {ctrl.actionLoading ? "Saving ..." : "Save Project and Videos"}
+          {actionLoading ? "Saving ..." : "Save Project and Videos"}
         </button>
       )}{" "}
       {status !== "published" && (
         <button
           type="button"
           className="ui small primary button"
-          disabled={ctrl.isInvalid() || depositsCtrl.loading}
-          onClick={() => actionHandler(ctrl, "PUBLISH")}
+          disabled={isInvalid(deposit) || loading}
+          onClick={() => actions.run("PUBLISH")}
         >
-          {ctrl.actionLoading ? "Publishing ..." : "Publish Project and Videos"}
+          {actionLoading ? "Publishing ..." : "Publish Project and Videos"}
         </button>
       )}{" "}
       {status !== "draft" && (
         <button
           type="button"
           className="ui small basic button"
-          disabled={depositsCtrl.loading}
-          onClick={() => actionHandler(ctrl, ["EDIT", "SAVE_PARTIAL"])}
+          disabled={loading}
+          onClick={() => actions.run(["EDIT", "SAVE_PARTIAL"])}
         >
-          {ctrl.actionLoading ? "Editing ..." : "Edit Project"}
+          {actionLoading ? "Editing ..." : "Edit Project"}
         </button>
       )}
     </>
   );
 }
 
-ProjectActions.propTypes = { ctrl: PropTypes.object.isRequired };
+ProjectActions.propTypes = { id: PropTypes.string.isRequired };
 
 function ShowDetailsButton({ label, onClick }) {
   return (
@@ -87,8 +99,8 @@ ShowDetailsButton.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
-function ProjectFields({ ctrl }) {
-  const depositsCtrl = ctrl.depositsCtrl;
+function ProjectFields({ id }) {
+  const { showAvcRestrictedFields } = useConfig();
   return (
     <div className="cds-row">
       <div className="cds-col-sm-6">
@@ -107,7 +119,7 @@ function ProjectFields({ ctrl }) {
           placeholder="Keywords"
           description="Search or add keywords as a comma separated list e.g. keyword1, keyword2 etc."
         />
-        {depositsCtrl.showAvcRestrictedFields === true && (
+        {showAvcRestrictedFields === true && (
           <TextField
             name="_eos_library_path"
             label="EOS library path"
@@ -122,23 +134,26 @@ function ProjectFields({ ctrl }) {
       </div>
       <div className="cds-col-sm-12">
         <hr className="my-15" />
-        <RestrictionsBox ctrl={ctrl} project />
+        <RestrictionsBox id={id} project />
       </div>
     </div>
   );
 }
 
-ProjectFields.propTypes = { ctrl: PropTypes.object.isRequired };
+ProjectFields.propTypes = { id: PropTypes.string.isRequired };
 
-export function ProjectPanel({ ctrl }) {
-  const depositsCtrl = ctrl.depositsCtrl;
-  const master = depositsCtrl.master.metadata;
+export function ProjectPanel({ id }) {
+  const { record, pending } = useDeposit(id);
+  const actions = useDepositActions(id);
+  const config = useConfig();
+  const anyVideoPublished = useAnyVideoPublished();
   const [collapsed, setCollapsed] = useState(true);
   const [active, setActive] = useState("metadata");
-  const published = ctrl.isPublished();
+  const published = isPublished(record);
+  const actionLoading = pending > 0;
 
   return (
-    <DepositForm ctrl={ctrl}>
+    <DepositForm id={id}>
       <div className="cds-panel cds-deposit-panel cds-deposit-panel-project">
         <div className="cds-panel-heading px-20 py-10">
           <span className=" text-muted">
@@ -169,23 +184,23 @@ export function ProjectPanel({ ctrl }) {
                 </p>
               </div>
             </InfoDialog>{" "}
-            <ProjectActions ctrl={ctrl} />
+            <ProjectActions id={id} />
           </div>
         </div>
         <div className="cds-panel-body">
-          <ErrorAlerts ctrl={ctrl} />
+          <ErrorAlerts id={id} />
           {/* Collapsed */}
           <div style={{ display: collapsed ? undefined : "none" }}>
             <div style={{ display: published ? undefined : "none" }}>
               <ul className="cds-list-inline">
                 <li>
                   <span className="ui label cds-label cds-label-default">
-                    {master.category}
+                    {record.category}
                   </span>
                 </li>{" "}
                 <li>
                   <span className="ui label cds-label cds-label-warning">
-                    {master.type}
+                    {record.type}
                   </span>
                 </li>{" "}
                 <li>
@@ -196,14 +211,13 @@ export function ProjectPanel({ ctrl }) {
               </ul>
               <hr className="my-15" />
               <h3 className="mb-5 mt-0">
-                <a href={depositsCtrl.getRecordUrl(ctrl.record.recid)}>
-                  {(ctrl.record.title && ctrl.record.title.title) ||
-                    "No video title"}
+                <a href={urlBuilder.record({ recid: record.recid })}>
+                  {(record.title && record.title.title) || "No video title"}
                 </a>
               </h3>
               <Html
                 className="f6"
-                html={ctrl.record.description || "No description"}
+                html={record.description || "No description"}
               />
             </div>
             {!published && (
@@ -218,20 +232,18 @@ export function ProjectPanel({ ctrl }) {
                 </div>
                 <div className="cds-row">
                   <div className="cds-col-sm-12 text-center text-muted">
-                    {!ctrl.isAnyVideoAlreadyPublished() && (
+                    {!anyVideoPublished && (
                       <span>
                         Select category and type, they will be applied to the
                         project and all videos.
                         <br />
                         <br />
                         Each project can contain{" "}
-                        <strong>
-                          maximum {depositsCtrl.maxNumberOfVideos}
-                        </strong>{" "}
+                        <strong>maximum {config.maxNumberOfVideos}</strong>{" "}
                         videos.
                       </span>
                     )}
-                    {ctrl.isAnyVideoAlreadyPublished() && (
+                    {anyVideoPublished && (
                       <span>
                         Category and type can be changed only if no video has
                         been published yet.
@@ -269,7 +281,7 @@ export function ProjectPanel({ ctrl }) {
                     { key: "access", title: "Project editors" },
                     {
                       key: "admin",
-                      hidden: !depositsCtrl.isSuperAdmin,
+                      hidden: !config.isSuperAdmin,
                       title: (
                         <>
                           <i className="fa fa-bug" aria-hidden="true" /> Admin
@@ -284,12 +296,12 @@ export function ProjectPanel({ ctrl }) {
                       display: active === "metadata" ? undefined : "none",
                     }}
                   >
-                    <ProjectFields ctrl={ctrl} />
+                    <ProjectFields id={id} />
                   </div>
                   <div
                     style={{ display: active === "files" ? undefined : "none" }}
                   >
-                    <ProjectUploader ctrl={ctrl} />
+                    <ProjectUploader id={id} />
                   </div>
                   <div
                     style={{
@@ -318,7 +330,7 @@ export function ProjectPanel({ ctrl }) {
                       display: active === "access" ? undefined : "none",
                     }}
                   >
-                    <EditorsField ctrl={ctrl} />
+                    <EditorsField id={id} />
                   </div>
                   <div
                     style={{ display: active === "admin" ? undefined : "none" }}
@@ -326,10 +338,7 @@ export function ProjectPanel({ ctrl }) {
                     <div className="mb-10 text-center">
                       <i className="fa fa-external-link" aria-hidden="true" />{" "}
                       <a
-                        href={
-                          depositsCtrl.projectLinks &&
-                          depositsCtrl.projectLinks.self
-                        }
+                        href={config.projectLinks && config.projectLinks.self}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -342,12 +351,10 @@ export function ProjectPanel({ ctrl }) {
                         <button
                           type="button"
                           className="ui large red button"
-                          disabled={ctrl.actionLoading}
-                          onClick={() => deleteVideo(ctrl)}
+                          disabled={actionLoading}
+                          onClick={actions.remove}
                         >
-                          {ctrl.actionLoading
-                            ? "Deleting ..."
-                            : "Delete Project"}
+                          {actionLoading ? "Deleting ..." : "Delete Project"}
                         </button>
                       </div>
                     </div>
@@ -371,4 +378,4 @@ export function ProjectPanel({ ctrl }) {
   );
 }
 
-ProjectPanel.propTypes = { ctrl: PropTypes.object.isRequired };
+ProjectPanel.propTypes = { id: PropTypes.string.isRequired };

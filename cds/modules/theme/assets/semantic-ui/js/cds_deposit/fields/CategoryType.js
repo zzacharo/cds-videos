@@ -15,9 +15,13 @@
 
 import React from "react";
 import PropTypes from "prop-types";
+import { useDispatch, useSelector } from "react-redux";
 import { Dropdown } from "semantic-ui-react";
 
-import { useDepositField, useDepositForm } from "./Fields";
+import { setRecordValue } from "../state/deposit";
+import { changeCategoryOrType } from "../state/permissions";
+import { selectAnyVideoPublished } from "../state/selectors";
+import { useDepositField, useDepositForm, useReadonly } from "./Fields";
 
 const DESCRIPTIONS = {
   category: "Category of the project.",
@@ -49,8 +53,8 @@ function StrapSelect({
   description,
   onChange,
 }) {
-  const { value, error, setValue, ctrl } = useDepositField(name);
-  const disabled = ctrl.isPublished() || readonly;
+  const { value, error, setValue } = useDepositField(name);
+  const disabled = useReadonly(readonly);
   return (
     <fieldset
       className={[
@@ -106,14 +110,16 @@ StrapSelect.defaultProps = {
 };
 
 export function CategoryField({ withDescription }) {
-  const { ctrl } = useDepositForm();
+  const { id } = useDepositForm();
+  const dispatch = useDispatch();
   const { formik } = useDepositField("type");
-  const categories = ctrl.depositsCtrl.categories || [];
+  const categories = useSelector((state) => state.page.categories);
+  const anyVideoPublished = useSelector(selectAnyVideoPublished);
   return (
     <StrapSelect
       name="category"
       label="Category"
-      readonly={ctrl.isAnyVideoAlreadyPublished()}
+      readonly={anyVideoPublished}
       description={withDescription ? DESCRIPTIONS.category : null}
       options={categories.map((category) => ({
         name: category.metadata.name,
@@ -122,9 +128,8 @@ export function CategoryField({ withDescription }) {
       onChange={() => {
         // Invalidate any previously selected type
         formik.setFieldValue("type", undefined);
-        // eslint-disable-next-line no-param-reassign
-        ctrl.record.type = undefined;
-        ctrl.updateCategoryTypeAndPermissions();
+        dispatch(setRecordValue(id, "type", undefined));
+        dispatch(changeCategoryOrType());
       }}
     />
   );
@@ -134,21 +139,24 @@ CategoryField.propTypes = { withDescription: PropTypes.bool };
 CategoryField.defaultProps = { withDescription: false };
 
 export function TypeField({ withDescription }) {
-  const { ctrl } = useDepositForm();
+  const { id } = useDepositForm();
+  const dispatch = useDispatch();
   const { formik } = useDepositField("type");
-  const categories = ctrl.depositsCtrl.categories || [];
+  const categories = useSelector((state) => state.page.categories);
+  const anyVideoPublished = useSelector(selectAnyVideoPublished);
+  const record = useSelector((state) => state.deposits[id].record);
   const category = formik.values.category;
-  const options = typesOf(categories, ctrl.record.type).filter(
+  const options = typesOf(categories, record.type).filter(
     (item) => item.category === category
   );
   return (
     <StrapSelect
       name="type"
       label="Type"
-      readonly={ctrl.hasCategory() || ctrl.isAnyVideoAlreadyPublished()}
+      readonly={!record.category || anyVideoPublished}
       description={withDescription ? DESCRIPTIONS.type : null}
       options={options}
-      onChange={() => ctrl.updateCategoryTypeAndPermissions()}
+      onChange={() => dispatch(changeCategoryOrType())}
     />
   );
 }

@@ -13,6 +13,15 @@
 import React from "react";
 import PropTypes from "prop-types";
 import _get from "lodash/get";
+import { useSelector } from "react-redux";
+
+import {
+  useAccessRights,
+  useDeposit,
+  useDepositActions,
+  useProjectRecord,
+} from "../state/hooks";
+import { isPublished } from "../state/records";
 
 import { AsyncMultiSelect } from "./AsyncSelect";
 import { autocompleteAccess } from "./autocomplete";
@@ -82,12 +91,15 @@ EmailsSelect.defaultProps = {
 };
 
 /** "Project restrictions when published" and "Published video restrictions". */
-export function RestrictionsBox({ ctrl, project }) {
-  const depositsCtrl = ctrl.depositsCtrl;
-  const access = _get(depositsCtrl.accessRights, "metadata.access") || {};
+export function RestrictionsBox({ id, project }) {
+  const { record, permissions } = useDeposit(id);
+  const actions = useDepositActions(id);
+  const access = _get(useAccessRights(), "metadata.access") || {};
+  const projectRecord = useProjectRecord();
+  const published = isPublished(record);
   const hasCategory = project
-    ? Boolean(ctrl.record.category)
-    : Boolean(depositsCtrl.master.metadata.category);
+    ? Boolean(record.category)
+    : Boolean(projectRecord.category);
   const restrictedLocked = access.restricted || [];
   return (
     <div className="cds-alert cds-alert-info">
@@ -104,22 +116,18 @@ export function RestrictionsBox({ ctrl, project }) {
       <div style={{ display: hasCategory ? undefined : "none" }}>
         <select
           className="cds-form-control"
-          value={ctrl.permissions || ""}
-          disabled={!access.public || ctrl.isPublished()}
-          onChange={(e) => {
-            // eslint-disable-next-line no-param-reassign
-            ctrl.permissions = e.target.value;
-            ctrl.applyNewAccessRights();
-          }}
+          value={permissions || ""}
+          disabled={!access.public || published}
+          onChange={(e) => actions.setPermissions(e.target.value)}
         >
-          {!ctrl.permissions && <option value="" />}
+          {!permissions && <option value="" />}
           <option value="public">Public</option>
           <option value="restricted">Restricted</option>
         </select>
         <div
           className="restricted mt-20"
           style={{
-            display: ctrl.permissions === "restricted" ? undefined : "none",
+            display: permissions === "restricted" ? undefined : "none",
           }}
         >
           <label className="control-label">
@@ -136,13 +144,12 @@ export function RestrictionsBox({ ctrl, project }) {
             </div>
           )}
           <EmailsSelect
-            values={_get(ctrl.record, "_access.read") || []}
+            values={_get(record, "_access.read") || []}
             disabled={
-              (!ctrl.record.category && access.public === "public") ||
-              ctrl.isPublished()
+              (!record.category && access.public === "public") || published
             }
             lockedValues={restrictedLocked}
-            onChange={(emails) => ctrl.setAccess("_access.read", emails)}
+            onChange={(emails) => actions.setAccess("_access.read", emails)}
           />
         </div>
       </div>
@@ -156,14 +163,16 @@ export function RestrictionsBox({ ctrl, project }) {
 }
 
 RestrictionsBox.propTypes = {
-  ctrl: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
   project: PropTypes.bool,
 };
 
 RestrictionsBox.defaultProps = { project: false };
 
 /** "Project editors" tab. */
-export function EditorsField({ ctrl }) {
+export function EditorsField({ id }) {
+  const record = useSelector((state) => state.deposits[id].record);
+  const actions = useDepositActions(id);
   return (
     <div className="cds-row">
       <div className="cds-col-sm-12">
@@ -172,14 +181,14 @@ export function EditorsField({ ctrl }) {
           Choose who can access and edit this project and all videos
         </small>
         <EmailsSelect
-          values={_get(ctrl.record, "_access.update") || []}
-          disabled={ctrl.isPublished()}
+          values={_get(record, "_access.update") || []}
+          disabled={isPublished(record)}
           delay={500}
-          onChange={(emails) => ctrl.setAccess("_access.update", emails)}
+          onChange={(emails) => actions.setAccess("_access.update", emails)}
         />
       </div>
     </div>
   );
 }
 
-EditorsField.propTypes = { ctrl: PropTypes.object.isRequired };
+EditorsField.propTypes = { id: PropTypes.string.isRequired };

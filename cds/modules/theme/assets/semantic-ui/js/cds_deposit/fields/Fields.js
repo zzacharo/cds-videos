@@ -22,11 +22,15 @@ import PropTypes from "prop-types";
 import { getIn, useFormikContext } from "formik";
 import _toPath from "lodash/toPath";
 import DOMPurify from "dompurify";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { Placeholder } from "semantic-ui-react";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
 
 import { parseAutocomplete } from "../filters";
+import { removeBackendError, setRecordValue } from "../state/deposit";
+import { isPublished } from "../state/records";
+import { registerField } from "../state/registry";
 import { AsyncMultiSelect, AsyncSelect } from "./AsyncSelect";
 import {
   autocompleteAuthors,
@@ -36,8 +40,8 @@ import {
 } from "./autocomplete";
 import { DatePickerInput } from "./DatePicker";
 
-/** The deposit of the form (``{ctrl}``). */
-export const DepositFormContext = React.createContext({ ctrl: null });
+/** The deposit of the form: ``{id, type}``. */
+export const DepositFormContext = React.createContext({ id: null, type: null });
 
 export function useDepositForm() {
   return useContext(DepositFormContext);
@@ -46,30 +50,38 @@ export function useDepositForm() {
 /** Value, error and setter of a field. */
 export function useDepositField(name, errorName) {
   const formik = useFormikContext();
-  const { ctrl } = useDepositForm();
+  const dispatch = useDispatch();
+  const { id } = useDepositForm();
   const errorPath = errorName || name;
   const value = getIn(formik.values, name);
   const touched = Boolean(getIn(formik.touched, name));
   const clientError = getIn(formik.errors, errorPath);
   const key = _toPath(name).join(".");
   // The server errors are shown on the field of the same key, as before
-  const backendError = ctrl.backendErrors[key];
-  useEffect(() => ctrl.registerField(key), [ctrl, key]);
+  const backendError = useSelector(
+    (state) => state.deposits[id].backendErrors[key]
+  );
+  useEffect(() => registerField(id, key), [id, key]);
   const error =
     backendError ||
     (touched && typeof clientError === "string" ? clientError : null);
   const setValue = (newValue) => {
     formik.setFieldValue(name, newValue);
     formik.setFieldTouched(name, true, false);
-    ctrl.setRecordValue(name, newValue);
+    dispatch(setRecordValue(id, name, newValue));
   };
-  return { value, error, setValue, formik, ctrl };
+  return { value, error, setValue, formik, id, dispatch };
+}
+
+/** The deposit of the form is published. */
+export function usePublished() {
+  const { id } = useDepositForm();
+  return useSelector((state) => isPublished(state.deposits[id].record));
 }
 
 /** Read only when the deposit is published (``formDefaults.readonly``). */
 export function useReadonly(extra) {
-  const { ctrl } = useDepositForm();
-  return ctrl.isPublished() || Boolean(extra);
+  return usePublished() || Boolean(extra);
 }
 
 export function FormGroup({
@@ -593,11 +605,14 @@ CKEditorField.defaultProps = {
 
 /* Keywords (``uiselectmultiple.html`` with tagging) */
 export function KeywordsField({ name, label, placeholder, description }) {
-  const { value, error, setValue, ctrl } = useDepositField(name);
+  const { value, error, setValue, id } = useDepositField(name);
   const disabled = useReadonly();
-  const [fetch] = useState(
-    () => (query) => autocompleteKeywords(ctrl.record.keywords)(query)
-  );
+  const store = useStore();
+  // The keywords of the record when the form is created, as before
+  const [fetch] = useState(() => {
+    const { keywords } = store.getState().deposits[id].record;
+    return (query) => autocompleteKeywords(keywords)(query);
+  });
   return (
     <div
       className={["field cds-form-group", error && "has-error"]
@@ -727,7 +742,8 @@ export function ArrayField({
   newItem,
   renderItem,
 }) {
-  const { value, error, setValue, formik, ctrl } = useDepositField(name);
+  const { value, error, setValue, formik, id, dispatch } =
+    useDepositField(name);
   const disabled = useReadonly();
   const items = Array.isArray(value) ? value : [];
 
@@ -736,7 +752,7 @@ export function ArrayField({
     if (!startEmpty && items.length === 0) {
       const next = [{}];
       formik.setFieldValue(name, next, false);
-      ctrl.setRecordValue(name, next);
+      dispatch(setRecordValue(id, name, next));
     }
     // Only when the form is created
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -893,7 +909,8 @@ export function CustomAuthorsInfo() {
 
 /* Contributors */
 export function ContributorsField({ roles }) {
-  const { ctrl } = useDepositForm();
+  const { id } = useDepositForm();
+  const dispatch = useDispatch();
   const [fetchAuthors] = useState(() =>
     autocompleteAuthors("/api/ldap/cern-users/")
   );
@@ -919,7 +936,7 @@ export function ContributorsField({ roles }) {
             onSelect={(item, setValue) => {
               // The whole contributor is replaced (as with ui-select)
               setValue(item.value);
-              ctrl.removeValidationMessage(`${path}.name`);
+              dispatch(removeBackendError(id, `${path}.name`));
             }}
           />
           <SelectField

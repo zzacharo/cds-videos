@@ -13,7 +13,7 @@
  * uploader.html and types/video/uploader.html).
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import _orderBy from "lodash/orderBy";
 
@@ -27,25 +27,21 @@ import {
 } from "@js/cds/utils";
 
 import { toInt } from "../filters";
-import { UploaderController } from "../uploader";
+import {
+  useConfig,
+  useDeposit,
+  useDepositActions,
+  useStarted,
+} from "../state/hooks";
+import { findMasterFile, isPublished } from "../state/records";
+import {
+  startUploads,
+  thumbnailPreview,
+  validateAdditionalFiles,
+  validateSubtitles,
+} from "../state/uploads";
 import { DropZone } from "./DropZone";
 import { InfoDialog, show } from "./common";
-
-/** The uploader of a deposit, created with the view. */
-export function useUploader(ctrl) {
-  const [uploader] = useState(() => {
-    if (!ctrl.uploader) {
-      // eslint-disable-next-line no-param-reassign
-      ctrl.uploader = new UploaderController(ctrl);
-    }
-    return ctrl.uploader;
-  });
-  useEffect(() => {
-    uploader.start();
-    return () => uploader.stop();
-  }, [uploader]);
-  return uploader;
-}
 
 function limitTo(text, length) {
   return (text || "").slice(0, length);
@@ -133,13 +129,13 @@ function HowToUpdateDialog() {
   );
 }
 
-function RemoveLink({ uploader, file }) {
+function RemoveLink({ onRemove, file }) {
   return (
     <a
       href="#remove"
       onClick={(e) => {
         e.preventDefault();
-        uploader.remove(file.key);
+        onRemove(file.key);
       }}
     >
       <i className="fa fa-trash-o" />
@@ -148,31 +144,33 @@ function RemoveLink({ uploader, file }) {
 }
 
 RemoveLink.propTypes = {
-  uploader: PropTypes.object.isRequired,
+  onRemove: PropTypes.func.isRequired,
   file: PropTypes.object.isRequired,
 };
 
-function ReplaceMasterDialog({ uploader, message }) {
+function ReplaceMasterDialog({ id, message }) {
+  const { newMasterName } = useDeposit(id);
+  const { closeNewMasterDialog } = useDepositActions(id);
   return (
     <DialogModal
-      open={uploader.confirmNewMaster}
-      onClose={() => uploader.closeNewMasterDialog(false)}
+      open={newMasterName !== null}
+      onClose={() => closeNewMasterDialog(false)}
       title="Replace master file"
     >
-      <p>{message}</p>
+      <p>{message(newMasterName)}</p>
       <hr className="mt-30 mb-10" />
       <p className="pull-right">
         <button
           type="button"
           className="ui basic button"
-          onClick={() => uploader.closeNewMasterDialog(false)}
+          onClick={() => closeNewMasterDialog(false)}
         >
           Cancel
         </button>
         <button
           type="button"
           className="ui green button"
-          onClick={() => uploader.closeNewMasterDialog(true)}
+          onClick={() => closeNewMasterDialog(true)}
         >
           Yes
         </button>
@@ -183,8 +181,8 @@ function ReplaceMasterDialog({ uploader, message }) {
 }
 
 ReplaceMasterDialog.propTypes = {
-  uploader: PropTypes.object.isRequired,
-  message: PropTypes.node.isRequired,
+  id: PropTypes.string.isRequired,
+  message: PropTypes.func.isRequired,
 };
 
 function SortHeader({ label, field, sort, setSort }) {
@@ -239,20 +237,24 @@ function TipsBox({ children }) {
 TipsBox.propTypes = { children: PropTypes.node.isRequired };
 
 /** Files of the project (``types/common/uploader.html``). */
-export function ProjectUploader({ ctrl }) {
-  const uploader = useUploader(ctrl);
+export function ProjectUploader({ id }) {
+  const { record } = useDeposit(id);
+  const actions = useDepositActions(id);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState({ type: undefined, reverse: false });
   const [showSubformats, setShowSubformats] = useState(false);
   const [showFrames, setShowFrames] = useState(false);
-  const files = uploader.files;
+  const files = record._files || [];
   const visible = angularFilter(sortFiles(files, sort), search);
-  const master = ctrl.currentMasterFile || {};
+  const master = findMasterFile(record) || {};
+  const published = isPublished(record);
   return (
     <>
       <ReplaceMasterDialog
-        uploader={uploader}
-        message={`Are you sure you want to replace the uploaded video with ${uploader.newMasterName}?`}
+        id={id}
+        message={(name) =>
+          `Are you sure you want to replace the uploaded video with ${name}?`
+        }
       />
       <div className="cds-panel" style={show(files.length > 0)}>
         <div className="cds-panel-heading">
@@ -308,7 +310,7 @@ export function ProjectUploader({ ctrl }) {
                 <td className="text-center">
                   {!(
                     file.context_type === "master" || file.percentage < 100
-                  ) && <RemoveLink uploader={uploader} file={file} />}
+                  ) && <RemoveLink onRemove={actions.removeFile} file={file} />}
                   <span
                     style={show(
                       file.context_type === "master" || file.percentage < 100
@@ -413,7 +415,7 @@ export function ProjectUploader({ ctrl }) {
                           <img
                             width="100%"
                             alt=""
-                            src={uploader.thumbnailPreview(frame)}
+                            src={thumbnailPreview(frame)}
                           />
                         )}
                       </a>
@@ -426,14 +428,9 @@ export function ProjectUploader({ ctrl }) {
         </table>
       </div>
       <hr className="my-20" />
-      {!ctrl.isPublished() && (
+      {!published && (
         <div className="cds-deposit-box">
-          <DropZone
-            multiple
-            onFiles={(newFiles, invalid) =>
-              uploader.addFiles(newFiles, invalid)
-            }
-          >
+          <DropZone multiple onFiles={actions.addFiles}>
             <div className="pa-10 cds-deposit-box-upload-wrapper text-center">
               <p className="cds-deposit-box-upload-icon mb-20">
                 <i className="fa fa-3x fa-files-o" aria-hidden="true" />
@@ -455,17 +452,7 @@ export function ProjectUploader({ ctrl }) {
           </TipsBox>
         </div>
       )}
-      {uploader.duplicateFiles.length > 0 && (
-        <div className="cds-alert cds-alert-danger">
-          <p>Multiple files with the same filename are not allowed:</p>
-          <ul>
-            {uploader.duplicateFiles.map((file) => (
-              <li key={file}>{file}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {ctrl.isPublished() && (
+      {published && (
         <div className="cds-deposit-box text-muted">
           <h5 className="text-muted">
             <strong>Tips and suggestions</strong>
@@ -482,7 +469,7 @@ export function ProjectUploader({ ctrl }) {
   );
 }
 
-ProjectUploader.propTypes = { ctrl: PropTypes.object.isRequired };
+ProjectUploader.propTypes = { id: PropTypes.string.isRequired };
 
 function AddLink({ onFiles, accept, pattern, validate, multiple }) {
   return (
@@ -517,14 +504,19 @@ AddLink.defaultProps = {
 };
 
 /** Files of a video (``types/video/uploader.html``). */
-export function VideoUploader({ ctrl }) {
-  const uploader = useUploader(ctrl);
+export function VideoUploader({ id }) {
+  const { record } = useDeposit(id);
+  const actions = useDepositActions(id);
+  const { isSuperAdmin, videoExtensions } = useConfig();
+  // A new video uploads its file once shown
+  useStarted(startUploads, id);
   const [hideSubformats, setHideSubformats] = useState(false);
   const [search, setSearch] = useState("");
   const [timesReplacedOpen, setTimesReplacedOpen] = useState(false);
-  const files = uploader.files;
-  const master = ctrl.currentMasterFile || {};
-  const published = ctrl.isPublished();
+  const files = record._files || [];
+  const currentMaster = findMasterFile(record);
+  const master = currentMaster || {};
+  const published = isPublished(record);
   const posters = findBy(files, "context_type", "poster") || [];
   const subtitles = findBy(files, "context_type", "subtitle") || [];
   const others =
@@ -538,14 +530,15 @@ export function VideoUploader({ ctrl }) {
       "subtitle"
     ) || [];
   const visibleOthers = angularFilter(others, search);
-  const addFiles = (newFiles, invalid) => uploader.addFiles(newFiles, invalid);
-  const validateSubtitles = (file) => uploader.validateSubtitles(file);
+  const { addFiles } = actions;
 
   return (
     <>
       <ReplaceMasterDialog
-        uploader={uploader}
-        message={`Are you sure you want to replace the previously uploaded file with ${uploader.newMasterName}?`}
+        id={id}
+        message={(name) =>
+          `Are you sure you want to replace the previously uploaded file with ${name}?`
+        }
       />
       {/* Master video and subformats */}
       <div className="cds-panel" style={show(files.length > 0)}>
@@ -628,7 +621,7 @@ export function VideoUploader({ ctrl }) {
                   ✓
                 </span>
               </td>
-              <td style={show(ctrl.currentMasterFile)} className="text-center">
+              <td style={show(currentMaster)} className="text-center">
                 <HowToUpdateDialog />
               </td>
             </tr>
@@ -691,13 +684,13 @@ export function VideoUploader({ ctrl }) {
                     </span>
                   </td>
                   <td className="text-center">
-                    <span style={show(ctrl.depositsCtrl.isSuperAdmin)}>
+                    <span style={show(isSuperAdmin)}>
                       <a
                         href="#restart"
                         style={show(f.status_failure || f.status_success)}
                         onClick={(e) => {
                           e.preventDefault();
-                          ctrl.triggerRestartFlowTask(f.flow_id, f.task_id);
+                          actions.restartTask(f.flow_id, f.task_id);
                         }}
                       >
                         <i className="fa fa-undo" />
@@ -742,11 +735,7 @@ export function VideoUploader({ ctrl }) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <img
-                      width="100%"
-                      alt=""
-                      src={uploader.thumbnailPreview(frame)}
-                    />
+                    <img width="100%" alt="" src={thumbnailPreview(frame)} />
                   </a>
                 </div>
               ))}
@@ -783,9 +772,8 @@ export function VideoUploader({ ctrl }) {
         <SubtitlesBody
           subtitles={subtitles}
           published={published}
-          uploader={uploader}
+          onRemove={actions.removeFile}
           addFiles={addFiles}
-          validateSubtitles={validateSubtitles}
         />
       </div>
       {/* Additional files */}
@@ -831,7 +819,7 @@ export function VideoUploader({ ctrl }) {
                 <FileProgress file={file} done="Done" />
                 <td className="text-center">
                   {!(file.percentage < 100 || published) && (
-                    <RemoveLink uploader={uploader} file={file} />
+                    <RemoveLink onRemove={actions.removeFile} file={file} />
                   )}
                 </td>
               </tr>
@@ -843,7 +831,7 @@ export function VideoUploader({ ctrl }) {
             <div className="cds-deposit-box">
               <DropZone
                 multiple
-                validate={(file) => uploader.validateAdditionalFiles(file)}
+                validate={validateAdditionalFiles}
                 onFiles={addFiles}
               >
                 <div className="pa-10 cds-deposit-box-upload-wrapper text-center">
@@ -874,11 +862,9 @@ export function VideoUploader({ ctrl }) {
             <div className="cds-deposit-box">
               <DropZone
                 multiple
-                accept={ctrl.depositsCtrl.videoExtensions}
-                pattern={ctrl.depositsCtrl.videoExtensions}
-                onFiles={(newFiles, invalid) =>
-                  uploader.replaceMasterFile(newFiles, invalid)
-                }
+                accept={videoExtensions}
+                pattern={videoExtensions}
+                onFiles={actions.replaceMasterFile}
               >
                 <div className="pa-10 cds-deposit-box-upload-wrapper text-center">
                   <p className="cds-deposit-box-upload-icon mb-20">
@@ -918,15 +904,9 @@ export function VideoUploader({ ctrl }) {
   );
 }
 
-VideoUploader.propTypes = { ctrl: PropTypes.object.isRequired };
+VideoUploader.propTypes = { id: PropTypes.string.isRequired };
 
-function SubtitlesBody({
-  subtitles,
-  published,
-  uploader,
-  addFiles,
-  validateSubtitles,
-}) {
+function SubtitlesBody({ subtitles, published, onRemove, addFiles }) {
   if (subtitles.length === 0) {
     if (published) {
       return (
@@ -981,7 +961,7 @@ function SubtitlesBody({
             <FileProgress file={file} done="Done" />
             <td className="text-center">
               {!(file.percentage < 100 || published) && (
-                <RemoveLink uploader={uploader} file={file} />
+                <RemoveLink onRemove={onRemove} file={file} />
               )}
             </td>
           </tr>
@@ -994,7 +974,6 @@ function SubtitlesBody({
 SubtitlesBody.propTypes = {
   subtitles: PropTypes.array.isRequired,
   published: PropTypes.bool.isRequired,
-  uploader: PropTypes.object.isRequired,
+  onRemove: PropTypes.func.isRequired,
   addFiles: PropTypes.func.isRequired,
-  validateSubtitles: PropTypes.func.isRequired,
 };

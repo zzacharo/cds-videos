@@ -18,8 +18,7 @@ import PropTypes from "prop-types";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
 
-import { actionHandler, deleteVideo, editPublished } from "../actions";
-import { DEPOSIT_STATUSES } from "../constants";
+import { DEPOSIT_STATUSES, urlBuilder } from "../constants";
 import { RestrictionsBox } from "../fields/Access";
 import {
   CheckboxField,
@@ -45,6 +44,15 @@ import {
 } from "../fields/options";
 import { taskRepr } from "../filters";
 import {
+  useConfig,
+  useDeposit,
+  useDepositActions,
+  useDepositStatus,
+  useLoading,
+  useProjectRecord,
+} from "../state/hooks";
+import { findMasterFile, isDraft, isPublished } from "../state/records";
+import {
   ErrorAlerts,
   Html,
   ProgressBar,
@@ -58,24 +66,28 @@ import { VideoUploader } from "./Uploaders";
 
 /* Actions (``types/video/actions.html``) */
 
-function VideoActions({ ctrl }) {
-  const depositsCtrl = ctrl.depositsCtrl;
+function VideoActions({ id }) {
+  const deposit = useDeposit(id);
+  const actions = useDepositActions(id);
+  const { showAvcRestrictedFields } = useConfig();
+  const project = useProjectRecord();
+  const loading = useLoading();
   const [deleteShown, setDeleteShown] = useState(false);
   const [publishShown, setPublishShown] = useState(false);
   const [cannotEditShown, setCannotEditShown] = useState(false);
-  const loading = depositsCtrl.loading;
-  const success = ctrl.currentDepositStatus === DEPOSIT_STATUSES.SUCCESS;
-  const published = ctrl.isPublished();
-  const master = depositsCtrl.master.metadata;
-  const masterFile = ctrl.currentMasterFile || {};
+  const { record, framesReady } = deposit;
+  const actionLoading = deposit.pending > 0;
+  const success = useDepositStatus(id).status === DEPOSIT_STATUSES.SUCCESS;
+  const published = isPublished(record);
+  const masterFile = findMasterFile(record) || {};
   const showAssign =
-    !ctrl.record.report_number &&
-    depositsCtrl.showAvcRestrictedFields &&
-    master.category &&
-    master.type;
+    !record.report_number &&
+    showAvcRestrictedFields &&
+    project.category &&
+    project.type;
 
   return (
-    <div style={show(!ctrl.waitingUpload)}>
+    <div style={show(!deposit.waitingUpload)}>
       <DialogModal
         open={deleteShown}
         onClose={() => setDeleteShown(false)}
@@ -88,7 +100,7 @@ function VideoActions({ ctrl }) {
             type="button"
             className="ui green button"
             onClick={() => {
-              deleteVideo(ctrl);
+              actions.remove();
               setDeleteShown(false);
             }}
           >
@@ -135,8 +147,7 @@ function VideoActions({ ctrl }) {
             type="button"
             className="ui green button"
             onClick={() => {
-              actionHandler(ctrl, ["SAVE", "PUBLISH"]);
-              ctrl.changeShowAll(true);
+              actions.publishVideo();
               setPublishShown(false);
             }}
           >
@@ -170,17 +181,13 @@ function VideoActions({ ctrl }) {
             <i className="fa fa-spinner fa-spin text-muted fa-fw" />
           </span>
         )}{" "}
-        {!(
-          ctrl.record._deposit.status === "published" ||
-          ctrl.record._deposit.pid
-        ) && (
+        {!(record._deposit.status === "published" || record._deposit.pid) && (
           <>
             <button
               type="button"
               className="ui small basic button"
               disabled={
-                (!ctrl.framesReady || loading) &&
-                !(masterFile.size === undefined)
+                (!framesReady || loading) && !(masterFile.size === undefined)
               }
               onClick={() => setDeleteShown(true)}
             >
@@ -193,10 +200,10 @@ function VideoActions({ ctrl }) {
             <button
               type="button"
               className="ui small green button"
-              disabled={ctrl.isPristine() || loading}
-              onClick={() => actionHandler(ctrl, "SAVE_PARTIAL")}
+              disabled={!deposit.dirty || loading}
+              onClick={() => actions.run("SAVE_PARTIAL")}
             >
-              {ctrl.actionLoading ? "Saving ..." : "Save"}
+              {actionLoading ? "Saving ..." : "Save"}
             </button>{" "}
           </>
         )}
@@ -205,13 +212,10 @@ function VideoActions({ ctrl }) {
             <button
               type="button"
               className="ui small primary button"
-              disabled={!ctrl.framesReady || loading || !success}
-              onClick={() => {
-                actionHandler(ctrl, ["SAVE", "PUBLISH"]);
-                ctrl.changeShowAll(true);
-              }}
+              disabled={!framesReady || loading || !success}
+              onClick={actions.publishVideo}
             >
-              {ctrl.actionLoading ? "Publishing ..." : "Publish"}
+              {actionLoading ? "Publishing ..." : "Publish"}
             </button>{" "}
           </>
         )}
@@ -220,31 +224,31 @@ function VideoActions({ ctrl }) {
             <button
               type="button"
               className="ui small primary button"
-              disabled={!ctrl.framesReady || loading}
+              disabled={!framesReady || loading}
               onClick={() => setPublishShown(true)}
             >
-              {ctrl.actionLoading ? "Publishing ..." : "Publish"}
+              {actionLoading ? "Publishing ..." : "Publish"}
             </button>{" "}
           </>
         )}
-        {!ctrl.isDraft() && (
+        {!isDraft(record) && (
           <>
             <button
               type="button"
               className="ui small basic button"
               disabled={loading}
               onClick={() =>
-                editPublished(ctrl, () => setCannotEditShown(true))
+                actions.editPublished(() => setCannotEditShown(true))
               }
             >
-              {ctrl.actionLoading ? "Editing ..." : "Edit"}
+              {actionLoading ? "Editing ..." : "Edit"}
             </button>{" "}
           </>
         )}
         {showAssign && (
           <a
             className={`ui small orange button${loading ? " disabled" : ""}`}
-            href={`/deposit/reportnumbers/assign/${ctrl.record._deposit.id}`}
+            href={`/deposit/reportnumbers/assign/${id}`}
           >
             Assign Report Number
           </a>
@@ -254,17 +258,19 @@ function VideoActions({ ctrl }) {
   );
 }
 
-VideoActions.propTypes = { ctrl: PropTypes.object.isRequired };
+VideoActions.propTypes = { id: PropTypes.string.isRequired };
 
 /* Extracted metadata (``Fill metadata suggestion``) */
 
-function ExtractedMetadata({ ctrl }) {
+function ExtractedMetadata({ id }) {
+  const { record, metadataToFill } = useDeposit(id);
+  const actions = useDepositActions(id);
   const [open, setOpen] = useState(false);
-  const toDisplay = ctrl.getMetadataToDisplay();
+  const toDisplay = metadataToFill ? metadataToFill[1] : {};
   return (
-    <div style={show(!ctrl.isPublished())}>
+    <div style={show(!isPublished(record))}>
       <div
-        style={show(ctrl.metadataToFill)}
+        style={show(metadataToFill)}
         className="cds-alert cds-alert-warning cds-alert-dismissible cds-deposit-metadata-extraction-alert"
         role="alert"
       >
@@ -272,11 +278,7 @@ function ExtractedMetadata({ ctrl }) {
           type="button"
           className="cds-close"
           aria-label="Close"
-          onClick={() => {
-            // eslint-disable-next-line no-param-reassign
-            ctrl.metadataToFill = false;
-            ctrl.notify();
-          }}
+          onClick={actions.dismissExtractedMetadata}
         >
           <span aria-hidden="true">&times;</span>
         </button>
@@ -308,7 +310,7 @@ function ExtractedMetadata({ ctrl }) {
             type="button"
             className="ui basic button"
             onClick={() => {
-              ctrl.fillMetadata(false);
+              actions.fillMetadata(false);
               setOpen(false);
             }}
           >
@@ -318,10 +320,7 @@ function ExtractedMetadata({ ctrl }) {
             type="button"
             className="ui green button"
             onClick={() => {
-              ctrl.fillMetadata(true);
-              // eslint-disable-next-line no-param-reassign
-              ctrl.metadataToFill = false;
-              ctrl.notify();
+              actions.fillMetadata(true);
               setOpen(false);
             }}
           >
@@ -333,15 +332,17 @@ function ExtractedMetadata({ ctrl }) {
   );
 }
 
-ExtractedMetadata.propTypes = { ctrl: PropTypes.object.isRequired };
+ExtractedMetadata.propTypes = { id: PropTypes.string.isRequired };
 
 /* Sidebar of the detail view */
 
-function InheritButton({ ctrl }) {
+function InheritButton({ id }) {
+  const { record } = useDeposit(id);
+  const { inheritMetadata } = useDepositActions(id);
+  const project = useProjectRecord();
   const [open, setOpen] = useState(false);
-  const master = ctrl.depositsCtrl.master.metadata;
   return (
-    <div style={show(master.title && !ctrl.isPublished())}>
+    <div style={show(project.title && !isPublished(record))}>
       <hr className="mt-10 mb-20" />
       <div className="text-center">
         <button
@@ -367,7 +368,7 @@ function InheritButton({ ctrl }) {
             type="button"
             className="ui basic button"
             onClick={() => {
-              ctrl.inheritMetadata(undefined, false);
+              inheritMetadata(false);
               setOpen(false);
             }}
           >
@@ -377,7 +378,7 @@ function InheritButton({ ctrl }) {
             type="button"
             className="ui basic button"
             onClick={() => {
-              ctrl.inheritMetadata(undefined, true);
+              inheritMetadata(true);
               setOpen(false);
             }}
           >
@@ -389,16 +390,17 @@ function InheritButton({ ctrl }) {
   );
 }
 
-InheritButton.propTypes = { ctrl: PropTypes.object.isRequired };
+InheritButton.propTypes = { id: PropTypes.string.isRequired };
 
-function VideoSidebar({ ctrl, onTranscodeInfo }) {
-  const depositsCtrl = ctrl.depositsCtrl;
-  const master = depositsCtrl.master.metadata;
-  const published = ctrl.isPublished();
-  const recordUrl = depositsCtrl.getRecordUrl(ctrl.record.recid);
+function VideoSidebar({ id, onTranscodeInfo }) {
+  const { record } = useDeposit(id);
+  const { showAvcRestrictedFields } = useConfig();
+  const master = useProjectRecord();
+  const published = isPublished(record);
+  const recordUrl = urlBuilder.record({ recid: record.recid });
   return (
     <div className="cds-col-sm-3">
-      <VideoPreview ctrl={ctrl} />
+      <VideoPreview id={id} />
       <div>
         {master.category && (
           <div className="text-muted mt-10">
@@ -430,7 +432,7 @@ function VideoSidebar({ ctrl, onTranscodeInfo }) {
         {!master.category && (
           <div className="text-muted mt-10">
             <i className="fa fa-info-circle" /> For publishing the video{" "}
-            {depositsCtrl.showAvcRestrictedFields && (
+            {showAvcRestrictedFields && (
               <span>, or assigning a report number, </span>
             )}{" "}
             please select category and type from the{" "}
@@ -471,26 +473,27 @@ function VideoSidebar({ ctrl, onTranscodeInfo }) {
           </p>
           <ul className="list-unstyled text-left my">
             <TaskList
-              state={ctrl.record._cds && ctrl.record._cds.state}
+              state={record._cds && record._cds.state}
               small
               onTranscodeInfo={onTranscodeInfo}
             />
           </ul>
         </div>
-        <InheritButton ctrl={ctrl} />
+        <InheritButton id={id} />
       </div>
     </div>
   );
 }
 
 VideoSidebar.propTypes = {
-  ctrl: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
   onTranscodeInfo: PropTypes.func.isRequired,
 };
 
 /* Tabs */
 
-function BasicInfo({ ctrl }) {
+function BasicInfo({ id }) {
+  const { showAvcRestrictedFields } = useConfig();
   return (
     <>
       <form className="form" onSubmit={(e) => e.preventDefault()}>
@@ -524,7 +527,7 @@ function BasicInfo({ ctrl }) {
           description="Required. Format: YYYY-MM-DD. In case your upload was already published elsewhere, please use the date of first publication."
         />
         <ContributorsField roles={CONTRIBUTOR_ROLES} />
-        {ctrl.depositsCtrl.showAvcRestrictedFields === true && (
+        {showAvcRestrictedFields === true && (
           <CheckboxField
             name="featured"
             label="Feature this video on the home page"
@@ -533,14 +536,16 @@ function BasicInfo({ ctrl }) {
         <CheckboxField name="vr" label="This video is 360" />
       </form>
       <hr className="my-15" />
-      <RestrictionsBox ctrl={ctrl} />
+      <RestrictionsBox id={id} />
     </>
   );
 }
 
-BasicInfo.propTypes = { ctrl: PropTypes.object.isRequired };
+BasicInfo.propTypes = { id: PropTypes.string.isRequired };
 
-function RestartTasks({ ctrl }) {
+function RestartTasks({ id }) {
+  const { record, tasksByName } = useDeposit(id);
+  const actions = useDepositActions(id);
   return (
     <div className="cds-panel">
       <div className="cds-panel-heading">
@@ -550,14 +555,14 @@ function RestartTasks({ ctrl }) {
           className="cds-btn-link cds-btn-xs pull-right"
           onClick={(e) => {
             e.preventDefault();
-            ctrl.triggerRestartFlow();
+            actions.restartFlow();
           }}
         >
           <i className="fa fa-refresh" aria-hidden="true" /> Restart All
         </a>
       </div>
       <div className="cds-panel-body">
-        {Object.entries(ctrl.allFlowsTasksByName || {}).map(([name, data]) => {
+        {Object.entries(tasksByName || {}).map(([name, data]) => {
           const first = data[0] || {};
           const payload = (first.info && first.info.payload) || {};
           const running = (status) =>
@@ -608,8 +613,8 @@ function RestartTasks({ ctrl }) {
                             }
                             onClick={(e) => {
                               e.preventDefault();
-                              if (!(ctrl.isDraft() || blocked)) {
-                                ctrl.triggerRestartFlowTask(
+                              if (!(isDraft(record) || blocked)) {
+                                actions.restartTask(
                                   taskPayload.flow_id,
                                   taskPayload.task_id
                                 );
@@ -655,10 +660,7 @@ function RestartTasks({ ctrl }) {
                   onClick={(e) => {
                     e.preventDefault();
                     if (first.status !== "PENDING") {
-                      ctrl.triggerRestartFlowTask(
-                        payload.flow_id,
-                        payload.task_id
-                      );
+                      actions.restartTask(payload.flow_id, payload.task_id);
                     }
                   }}
                 >
@@ -683,23 +685,20 @@ function RestartTasks({ ctrl }) {
   );
 }
 
-RestartTasks.propTypes = { ctrl: PropTypes.object.isRequired };
+RestartTasks.propTypes = { id: PropTypes.string.isRequired };
 
-function AdminTab({ ctrl }) {
+function AdminTab({ id }) {
+  const { record } = useDeposit(id);
   const [showMetadata, setShowMetadata] = useState(false);
   return (
     <>
       <div className="mb-10 text-center">
         <i className="fa fa-external-link" aria-hidden="true" />{" "}
-        <a
-          href={`/api/deposits/video/${ctrl.record._deposit.id}`}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a href={`/api/deposits/video/${id}`} target="_blank" rel="noreferrer">
           See JSON
         </a>
       </div>
-      <RestartTasks ctrl={ctrl} />
+      <RestartTasks id={id} />
       <div className="cds-panel">
         <div className="cds-panel-heading">Record metadata</div>
         <div className="cds-panel-body">
@@ -716,7 +715,7 @@ function AdminTab({ ctrl }) {
             </a>
           </div>
           <span style={show(showMetadata)}>
-            {showMetadata && <pre>{JSON.stringify(ctrl.record, null, 2)}</pre>}
+            {showMetadata && <pre>{JSON.stringify(record, null, 2)}</pre>}
           </span>
         </div>
       </div>
@@ -724,9 +723,11 @@ function AdminTab({ ctrl }) {
   );
 }
 
-AdminTab.propTypes = { ctrl: PropTypes.object.isRequired };
+AdminTab.propTypes = { id: PropTypes.string.isRequired };
 
-function VideoTabs({ ctrl }) {
+function VideoTabs({ id }) {
+  const { record } = useDeposit(id);
+  const { isSuperAdmin } = useConfig();
   const [active, setActive] = useState("metadata");
   const pane = (key) => ({ display: active === key ? undefined : "none" });
   return (
@@ -742,7 +743,7 @@ function VideoTabs({ ctrl }) {
           { key: "related_links", title: "Related information" },
           {
             key: "admin",
-            hidden: !ctrl.depositsCtrl.isSuperAdmin,
+            hidden: !isSuperAdmin,
             title: (
               <>
                 <i className="fa fa-bug" aria-hidden="true" /> Admin
@@ -753,10 +754,10 @@ function VideoTabs({ ctrl }) {
       />
       <div className="tab-content cds-tab-content pa-20">
         <div style={pane("metadata")} role="tabpanel" className="tab-pane">
-          <BasicInfo ctrl={ctrl} />
+          <BasicInfo id={id} />
         </div>
         <div style={pane("files")} role="tabpanel" className="tab-pane">
-          <VideoUploader ctrl={ctrl} />
+          <VideoUploader id={id} />
         </div>
         <div style={pane("licenses")} role="tabpanel" className="tab-pane">
           <form className="form" onSubmit={(e) => e.preventDefault()}>
@@ -768,7 +769,7 @@ function VideoTabs({ ctrl }) {
           <form className="form" onSubmit={(e) => e.preventDefault()}>
             <TranslationsField />
           </form>
-          {!ctrl.isPublished() && (
+          {!isPublished(record) && (
             <div className="cds-deposit-box">
               <div className="text-muted">
                 <h5 className="text-muted">
@@ -791,33 +792,35 @@ function VideoTabs({ ctrl }) {
           </form>
         </div>
         <div style={pane("admin")} role="tabpanel" className="tab-pane">
-          <AdminTab ctrl={ctrl} />
+          <AdminTab id={id} />
         </div>
       </div>
     </div>
   );
 }
 
-VideoTabs.propTypes = { ctrl: PropTypes.object.isRequired };
+VideoTabs.propTypes = { id: PropTypes.string.isRequired };
 
 /* The video form (``types/video/form.html``) */
 
-function VideoForm({ ctrl, onTranscodeInfo }) {
-  const depositsCtrl = ctrl.depositsCtrl;
-  const published = ctrl.isPublished();
-  const master = depositsCtrl.master.metadata;
-  const recordUrl = depositsCtrl.getRecordUrl(ctrl.record.recid);
-  const firstFile = (ctrl.record._files || [])[0] || {};
+function VideoForm({ id, onTranscodeInfo }) {
+  const { record, showAll, waitingUpload } = useDeposit(id);
+  const { changeShowAll } = useDepositActions(id);
+  const { status, startedTask } = useDepositStatus(id);
+  const master = useProjectRecord();
+  const published = isPublished(record);
+  const recordUrl = urlBuilder.record({ recid: record.recid });
+  const firstFile = (record._files || [])[0] || {};
   return (
     <>
-      <ErrorAlerts ctrl={ctrl} />
-      <ExtractedMetadata ctrl={ctrl} />
-      <div className="cds-row" style={show(!ctrl.waitingUpload)}>
+      <ErrorAlerts id={id} />
+      <ExtractedMetadata id={id} />
+      <div className="cds-row" style={show(!waitingUpload)}>
         {/* Brief view */}
-        <div style={show(published && !ctrl.showAll)} className="cds-col-sm-12">
+        <div style={show(published && !showAll)} className="cds-col-sm-12">
           <div className="cds-row">
             <div className="cds-col-sm-3">
-              <VideoPreview ctrl={ctrl} />
+              <VideoPreview id={id} />
             </div>
             <div className="cds-col-sm-9">
               <ul className="cds-list-inline">
@@ -840,52 +843,48 @@ function VideoForm({ ctrl, onTranscodeInfo }) {
               <hr className="my-15" />
               <h4 className="mb-5 mt-0">
                 <a href={recordUrl}>
-                  {(ctrl.record.title && ctrl.record.title.title) ||
-                    "No video title"}
+                  {(record.title && record.title.title) || "No video title"}
                 </a>
               </h4>
-              <Html html={ctrl.record.description || "No description"} />
+              <Html html={record.description || "No description"} />
             </div>
           </div>
         </div>
         {/* Detail view */}
         <div
-          style={show(!published || (published && ctrl.showAll))}
+          style={show(!published || (published && showAll))}
           className="cds-col-sm-12"
         >
           <div className="cds-row">
             <div className="cds-col-sm-12">
-              <div style={show(ctrl.displayFailure())}>
-                {Object.keys(
-                  ctrl.stateQueue ? ctrl.stateQueue.FAILURE || {} : {}
-                )
-                  .filter((status) => status !== "file_transcode")
-                  .map((status) => (
-                    <div className="cds-alert cds-alert-danger" key={status}>
-                      <strong>
-                        Error: {taskRepr(ctrl.stateReporter[status].message)}
-                      </strong>
-                    </div>
-                  ))}
-              </div>
-              <div style={show(ctrl.displayPending())}>
+              <div style={show(status === DEPOSIT_STATUSES.PENDING)}>
                 <ProgressBar striped active>
                   Loading ...
                 </ProgressBar>
               </div>
-              <div style={show(ctrl.displayStarted())} className="cds-row">
+              <div
+                style={show(status === DEPOSIT_STATUSES.STARTED)}
+                className="cds-row"
+              >
                 <ProgressBar striped active>
-                  {taskRepr(ctrl.currentStartedTaskName)}
+                  {taskRepr(startedTask)}
                 </ProgressBar>
               </div>
-              <div style={show(ctrl.displaySuccess())} className="cds-row">
+              <div
+                style={show(
+                  status === DEPOSIT_STATUSES.SUCCESS &&
+                    !published &&
+                    !record.recid
+                )}
+                className="cds-row"
+              >
                 <ProgressBar success>
                   <strong>Tasks successfully completed!</strong>
                 </ProgressBar>
               </div>
             </div>
-            <VideoSidebar ctrl={ctrl} onTranscodeInfo={onTranscodeInfo} />
-            <VideoTabs ctrl={ctrl} />
+            <VideoSidebar id={id} onTranscodeInfo={onTranscodeInfo} />
+            <VideoTabs id={id} />
           </div>
         </div>
         <div style={show(published)} className="cds-row">
@@ -895,16 +894,16 @@ function VideoForm({ ctrl, onTranscodeInfo }) {
               <button
                 type="button"
                 className="ui small basic button"
-                onClick={() => ctrl.changeShowAll(ctrl.showAll)}
+                onClick={() => changeShowAll(showAll)}
               >
-                {ctrl.showAll ? "Hide details" : "Show details"}
+                {showAll ? "Hide details" : "Show details"}
               </button>
             </div>
           </div>
         </div>
       </div>
       {/* Waiting for the upload */}
-      <div className="cds-row" style={show(ctrl.waitingUpload)}>
+      <div className="cds-row" style={show(waitingUpload)}>
         <div className="cds-col-md-12">
           <div className="cds-progress">
             <div
@@ -941,23 +940,22 @@ function VideoForm({ ctrl, onTranscodeInfo }) {
 }
 
 VideoForm.propTypes = {
-  ctrl: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
   onTranscodeInfo: PropTypes.func.isRequired,
 };
 
 /* The video panel (``deposits.html``) */
 
-export function VideoPanel({ ctrl, index, onTranscodeInfo }) {
-  const depositsCtrl = ctrl.depositsCtrl;
-  const id = ctrl.record._deposit.id;
-  const reportNumber = ctrl.record.report_number;
+export function VideoPanel({ id, index, onTranscodeInfo }) {
+  const reportNumber = useDeposit(id).record.report_number;
+  const { maxNumberOfVideos } = useConfig();
   return (
     <div id={id}>
       <div id={`video_${id}`} className="cds-deposit-panel cds-panel">
         <div className="cds-panel-heading text-muted px-20 py-10 cds-sticky-heading">
           <span className="text-muted">
             <i className="fa fa-video-camera" /> Video #{index + 1} (of{" "}
-            {depositsCtrl.maxNumberOfVideos}){" "}
+            {maxNumberOfVideos}){" "}
             {reportNumber && (
               <span className="ui label cds-label cds-label-primary ml-10">
                 {" "}
@@ -966,12 +964,12 @@ export function VideoPanel({ ctrl, index, onTranscodeInfo }) {
             )}
           </span>
           <span className="pull-right">
-            <VideoActions ctrl={ctrl} />
+            <VideoActions id={id} />
           </span>
         </div>
         <div className="cds-panel-body">
-          <DepositForm ctrl={ctrl}>
-            <VideoForm ctrl={ctrl} onTranscodeInfo={onTranscodeInfo} />
+          <DepositForm id={id}>
+            <VideoForm id={id} onTranscodeInfo={onTranscodeInfo} />
           </DepositForm>
         </div>
       </div>
@@ -980,7 +978,7 @@ export function VideoPanel({ ctrl, index, onTranscodeInfo }) {
 }
 
 VideoPanel.propTypes = {
-  ctrl: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
   index: PropTypes.number.isRequired,
   onTranscodeInfo: PropTypes.func.isRequired,
 };
