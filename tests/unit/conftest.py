@@ -96,8 +96,9 @@ def app():
         DEBUG_TB_ENABLED=False,
         TESTING=True,
         CELERY_TASK_ALWAYS_EAGER=True,
-        SQLALCHEMY_DATABASE_URI=(
-            "postgresql+psycopg2://invenio:invenio@localhost/invenio"
+        SQLALCHEMY_DATABASE_URI=os.environ.get(
+            "SQLALCHEMY_DATABASE_URI",
+            "postgresql+psycopg2://invenio:invenio@localhost/invenio",
         ),
         CELERY_RESULT_BACKEND="cache",
         CELERY_CACHE_BACKEND="memory",
