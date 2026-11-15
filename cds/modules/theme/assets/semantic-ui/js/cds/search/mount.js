@@ -23,6 +23,7 @@ import { LoadingBar } from "../components/LoadingBar";
 import { VIDEO_PLACEHOLDERS } from "../components/Placeholders";
 import { SearchBarSuggestions } from "../components/SearchBarSuggestions";
 import { VIDEO_TEMPLATES } from "../components/VideoTemplates";
+import { parseJSON } from "../dom";
 import {
   DepositSearchFacets,
   SearchCount,
@@ -36,25 +37,6 @@ import {
 } from "./components";
 import { useSearch } from "./hooks";
 import { SearchApp } from "./SearchApp";
-
-export function parseJSON(value, fallback) {
-  if (!value) {
-    return fallback;
-  }
-  try {
-    return JSON.parse(value);
-  } catch (error) {
-    return fallback;
-  }
-}
-
-export function onReady(callback) {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", callback);
-  } else {
-    callback();
-  }
-}
 
 /** Mount the loading bar once per page (``angular-loading-bar``). */
 export function mountLoadingBar() {

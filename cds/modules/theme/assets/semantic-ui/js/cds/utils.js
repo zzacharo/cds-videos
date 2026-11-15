@@ -279,11 +279,6 @@ export function replace(text, replaceText, replaceWith) {
   return undefined;
 }
 
-/** Replace '_' with ' '. */
-export function titlecase(text) {
-  return text ? String(text).replace(/_/g, " ") : "";
-}
-
 /** Format urls for download. */
 export function download(url) {
   if (!url) {
@@ -357,14 +352,6 @@ export function bytesToHumanReadable(size) {
     return Math.round(size / 1024) + " KB";
   }
   return size + " B";
-}
-
-export function toMinutes(seconds) {
-  try {
-    return new Date(seconds * 1000).toISOString().substr(11, 8);
-  } catch (error) {
-    return seconds;
-  }
 }
 
 /** Iframe embed code of a video (``previewIframe`` filter). */
@@ -467,15 +454,6 @@ export function angularFilter(items, expression) {
     return String(value).toLowerCase().indexOf(needle) > -1;
   }
   return (items || []).filter(matches);
-}
-
-/** AngularJS ``orderBy`` filter for a single property. */
-export function angularOrderBy(items, property, reverse) {
-  if (!property) {
-    return reverse ? [...(items || [])].reverse() : items || [];
-  }
-  const sorted = _orderBy(items || [], [property], [reverse ? "desc" : "asc"]);
-  return sorted;
 }
 
 /** Return the value of a lodash path in an object, or a default. */

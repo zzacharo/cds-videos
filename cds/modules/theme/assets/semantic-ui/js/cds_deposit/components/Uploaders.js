@@ -29,7 +29,7 @@ import {
 import { toInt } from "../filters";
 import { UploaderController } from "../uploader";
 import { DropZone } from "./DropZone";
-import { InfoDialog } from "./common";
+import { InfoDialog, show } from "./common";
 
 /** The uploader of a deposit, created with the view. */
 export function useUploader(ctrl) {
@@ -79,10 +79,6 @@ function FileSize({ file }) {
 }
 
 FileSize.propTypes = { file: PropTypes.object.isRequired };
-
-function show(condition) {
-  return { display: condition ? undefined : "none" };
-}
 
 function FileProgress({ file, done }) {
   return (

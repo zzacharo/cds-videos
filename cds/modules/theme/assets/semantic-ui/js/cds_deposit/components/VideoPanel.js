@@ -51,13 +51,10 @@ import {
   Tabs,
   TaskList,
   VideoPreview,
+  show,
 } from "./common";
 import { DepositForm } from "./DepositForm";
 import { VideoUploader } from "./Uploaders";
-
-function show(condition) {
-  return { display: condition ? undefined : "none" };
-}
 
 /* Actions (``types/video/actions.html``) */
 

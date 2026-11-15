@@ -16,7 +16,8 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import { mountSearchApp, onReady, parseJSON } from "@js/cds/search/mount";
+import { onReady, parseJSON } from "@js/cds/dom";
+import { mountSearchApp } from "@js/cds/search/mount";
 
 import { Deposits } from "./components/Deposits";
 import {

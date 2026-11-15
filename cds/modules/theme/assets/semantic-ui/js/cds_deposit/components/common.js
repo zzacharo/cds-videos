@@ -19,6 +19,11 @@ import { DialogModal } from "@js/cds/components/DialogModal";
 
 import { orderTasks, progressClass, progressIcon, taskRepr } from "../filters";
 
+/** Style hiding an element, like ``ng-show``. */
+export function show(condition) {
+  return { display: condition ? undefined : "none" };
+}
+
 /** Bootstrap like panel (``panel panel-default``). */
 export function Panel({
   className,

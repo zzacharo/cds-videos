@@ -104,22 +104,6 @@ export const http = setupInterceptors(
   })
 );
 
-/** Serialize params like invenio-search-js (repeated keys for arrays). */
-export function serializeParams(params) {
-  const output = [];
-  Object.keys(params || {}).forEach((key) => {
-    const value = params[key];
-    if (Array.isArray(value)) {
-      value.forEach((item) => {
-        output.push(encodeURIComponent(key) + "=" + encodeURIComponent(item));
-      });
-    } else if (value !== undefined) {
-      output.push(encodeURIComponent(key) + "=" + encodeURIComponent(value));
-    }
-  });
-  return output.join("&");
-}
-
 /**
  * ``localStorage`` helpers compatible with angular-local-storage, so that
  * the values stored by the previous interface are still found.

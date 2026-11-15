@@ -13,7 +13,8 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import { mountLoadingBar, onReady, parseJSON } from "@js/cds/search/mount";
+import { onReady, parseJSON } from "@js/cds/dom";
+import { mountLoadingBar } from "@js/cds/search/mount";
 
 import { RecordView } from "./RecordView";
 

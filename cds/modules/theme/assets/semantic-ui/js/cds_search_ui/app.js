@@ -17,7 +17,8 @@
  * ``invenioSearch`` controller before.
  */
 
-import { mountSearchApp, onReady } from "@js/cds/search/mount";
+import { onReady } from "@js/cds/dom";
+import { mountSearchApp } from "@js/cds/search/mount";
 
 onReady(() => {
   const root = document.getElementById("invenio-search");

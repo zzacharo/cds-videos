@@ -19,6 +19,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 
 import { http } from "./api";
+import { onReady } from "./dom";
 import { SearchBarSuggestions } from "./components/SearchBarSuggestions";
 import { SearchWidget } from "./components/SearchWidget";
 
@@ -134,14 +135,6 @@ function initDismissibleAlerts() {
       }
     }
   });
-}
-
-function onReady(callback) {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", callback);
-  } else {
-    callback();
-  }
 }
 
 onReady(() => {
