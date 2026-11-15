@@ -23,8 +23,6 @@ import { getIn, useFormikContext } from "formik";
 import _toPath from "lodash/toPath";
 import DOMPurify from "dompurify";
 import { Placeholder } from "semantic-ui-react";
-// Defines ``window.CKEDITOR`` (plugins and skins from ``CKEDITOR_BASEPATH``)
-import "ckeditor";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
 
@@ -463,6 +461,15 @@ CKEditorLoading.propTypes = {
 
 CKEditorLoading.defaultProps = { html: "" };
 
+// CKEditor 4 (about 620 KB) defines ``window.CKEDITOR`` and loads its plugins
+// and skin from ``CKEDITOR_BASEPATH``: load it with the first editor, after
+// the form is shown
+let ckeditor;
+function loadCKEditor() {
+  ckeditor = ckeditor || import("ckeditor").then(() => window.CKEDITOR);
+  return ckeditor;
+}
+
 export function CKEditorField({ name, label, description, required, config }) {
   const { value, error, setValue } = useDepositField(name);
   const disabled = useReadonly();
@@ -470,42 +477,48 @@ export function CKEditorField({ name, label, description, required, config }) {
   const textarea = useRef(null);
   const editor = useRef(null);
   const settingData = useRef(false);
-  const latest = useRef({ value, setValue });
-  latest.current = { value, setValue };
+  const latest = useRef({ value, setValue, disabled });
+  latest.current = { value, setValue, disabled };
 
   useEffect(() => {
-    const CKEDITOR = window.CKEDITOR;
-    if (!CKEDITOR || !textarea.current) return undefined;
-    const instance = CKEDITOR.replace(textarea.current, {
-      // The default width of ng-ckeditor (the borders overflow the field)
-      width: "100%",
-      ...config,
-      readOnly: disabled,
-    });
-    editor.current = instance;
-    const onChange = () => {
-      if (settingData.current) return;
-      const data = sanitizeHtml(instance.getData());
-      if (data !== (latest.current.value || "")) {
-        latest.current.setValue(data);
-      }
-    };
-    instance.on("change", onChange);
-    instance.on("instanceReady", () => {
-      settingData.current = true;
-      // An empty value is an empty paragraph, as with ng-ckeditor
-      instance.setData(latest.current.value || "<p></p>", {
-        callback: () => {
-          settingData.current = false;
-          setReady(true);
-        },
+    let active = true;
+    let instance = null;
+    loadCKEditor().then((CKEDITOR) => {
+      if (!active || !CKEDITOR || !textarea.current) return;
+      instance = CKEDITOR.replace(textarea.current, {
+        // The default width of ng-ckeditor (the borders overflow the field)
+        width: "100%",
+        ...config,
+        readOnly: latest.current.disabled,
+      });
+      editor.current = instance;
+      const onChange = () => {
+        if (settingData.current) return;
+        const data = sanitizeHtml(instance.getData());
+        if (data !== (latest.current.value || "")) {
+          latest.current.setValue(data);
+        }
+      };
+      instance.on("change", onChange);
+      instance.on("instanceReady", () => {
+        settingData.current = true;
+        // An empty value is an empty paragraph, as with ng-ckeditor
+        instance.setData(latest.current.value || "<p></p>", {
+          callback: () => {
+            settingData.current = false;
+            setReady(true);
+          },
+        });
       });
     });
     return () => {
-      try {
-        instance.destroy(true);
-      } catch (e) {
-        // Already destroyed
+      active = false;
+      if (instance) {
+        try {
+          instance.destroy(true);
+        } catch (e) {
+          // Already destroyed
+        }
       }
       editor.current = null;
     };
