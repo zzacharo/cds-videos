@@ -305,4 +305,3 @@ export function renderHistogram(
   createSelector(placement, selectPlacement, onSelection);
 }
 
-export { d3 };

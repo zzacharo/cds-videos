@@ -25,7 +25,14 @@ import {
 } from "../utils";
 import { FacetsPlaceholder, LinePlaceholder } from "../components/Placeholders";
 import { useSearch } from "./hooks";
-import { d3, renderHistogram } from "./rangeHistogram";
+
+// The year histogram draws with d3 (about 150 KB): load it with the first
+// year facet only, instead of on every page that shows search results
+let histogram;
+function loadHistogram() {
+  histogram = histogram || import("./rangeHistogram");
+  return histogram;
+}
 
 /** True until the first results (or error) of the search arrive. */
 export function isFirstLoad(state) {
@@ -298,6 +305,8 @@ export function SearchRange({ options: userOptions }) {
   const hasBuckets = aggregation && (aggregation.buckets || []).length > 0;
 
   useEffect(() => {
+    let active = true;
+
     function changeUserSelection(from, to) {
       if (!isNaN(from) && !isNaN(to)) {
         store.changeParams({ [opts.name]: from + "--" + to });
@@ -305,7 +314,7 @@ export function SearchRange({ options: userOptions }) {
     }
 
     function getRangeWidth() {
-      const elem = d3.select(opts.histogramId).node();
+      const elem = document.querySelector(opts.histogramId);
       return elem ? elem.getBoundingClientRect().width : 0;
     }
 
@@ -329,13 +338,17 @@ export function SearchRange({ options: userOptions }) {
               opts.selectionRange = { min: rMin, max: rMax };
             }
           }
-          renderHistogram(
-            opts.histogramId,
-            opts.selectionId,
-            buckets,
-            opts,
-            changeUserSelection
-          );
+          loadHistogram().then(({ renderHistogram }) => {
+            if (active) {
+              renderHistogram(
+                opts.histogramId,
+                opts.selectionId,
+                buckets,
+                opts,
+                changeUserSelection
+              );
+            }
+          });
         }
       }
     }
@@ -348,9 +361,11 @@ export function SearchRange({ options: userOptions }) {
     }
     if (opts.responsive) {
       window.addEventListener("resize", updateRange);
-      return () => window.removeEventListener("resize", updateRange);
     }
-    return undefined;
+    return () => {
+      active = false;
+      window.removeEventListener("resize", updateRange);
+    };
   }, [state.loading, state.results, store, opts]);
 
   const resetRangeSelection = (e) => {
