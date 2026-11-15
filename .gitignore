@@ -8,6 +8,8 @@ __pycache__/
 # Distribution / packaging
 bin/
 build/
+# The rspack build project of the theme
+!cds/modules/theme/rspack/build/
 develop-eggs/
 dist/
 eggs/
