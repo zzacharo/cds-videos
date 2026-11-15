@@ -27,15 +27,6 @@ import {
 } from "./index/components";
 import { createDepositStore } from "./state/store";
 
-function isIEBelowEdge() {
-  return (
-    navigator.appName === "Microsoft Internet Explorer" ||
-    Boolean(
-      navigator.userAgent.match(/Trident/) || navigator.userAgent.match(/rv:11/)
-    )
-  );
-}
-
 function maxNumberOfVideos() {
   const element = document.getElementById("max-n-videos-per-project");
   return element && element.value ? parseInt(element.value, 10) : 10;
@@ -73,12 +64,6 @@ function mountDeposits(element) {
 }
 
 onReady(() => {
-  // Show a warning if IE (not supported for deposit)
-  const ieWarning = document.getElementById("cds-deposit-ie-warning");
-  if (ieWarning && isIEBelowEdge()) {
-    ieWarning.classList.remove("hidden");
-  }
-
   const deposits = document.getElementById("cds-deposit");
   if (deposits) {
     mountDeposits(deposits);

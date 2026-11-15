@@ -16,6 +16,7 @@
  * column, results column) and share the same search state.
  */
 
+import PropTypes from "prop-types";
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { createRoot } from "react-dom/client";
@@ -89,6 +90,13 @@ function HeaderSearchBar({ data }) {
     />
   );
 }
+
+HeaderSearchBar.propTypes = {
+  data: PropTypes.shape({
+    placeholder: PropTypes.string,
+    formId: PropTypes.string,
+  }).isRequired,
+};
 
 /**
  * Components available to the placeholders, keyed by the value of
