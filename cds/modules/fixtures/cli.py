@@ -38,7 +38,7 @@ from invenio_db import db
 from invenio_files_rest.models import Bucket, Location, ObjectVersion, ObjectVersionTag
 from invenio_indexer.api import RecordIndexer
 from invenio_opendefinition.cli import loadlicenses
-from invenio_pages import Page
+from invenio_pages import PageModel as Page
 from invenio_pidstore.models import PersistentIdentifier, PIDStatus
 from invenio_records_files.models import RecordsBuckets
 from invenio_sequencegenerator.api import Template

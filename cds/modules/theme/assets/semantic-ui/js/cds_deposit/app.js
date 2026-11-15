@@ -14,7 +14,7 @@
  */
 
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 
 import { onReady, parseJSON } from "@js/cds/dom";
 import { mountSearchApp } from "@js/cds/search/mount";
@@ -69,7 +69,7 @@ function mountDeposits(element) {
   );
   // No loading bar: the form shows placeholders while loading, and its own
   // spinner during the actions
-  ReactDOM.render(<Deposits store={store} />, element);
+  createRoot(element).render(<Deposits store={store} />);
 }
 
 onReady(() => {

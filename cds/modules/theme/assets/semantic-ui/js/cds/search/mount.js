@@ -18,6 +18,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 
 import { LoadingBar } from "../components/LoadingBar";
 import { VIDEO_PLACEHOLDERS } from "../components/Placeholders";
@@ -46,7 +47,7 @@ export function mountLoadingBar() {
   const element = document.createElement("div");
   element.id = "cds-loading-bar-root";
   document.body.appendChild(element);
-  ReactDOM.render(<LoadingBar />, element);
+  createRoot(element).render(<LoadingBar />);
 }
 
 /**
@@ -166,7 +167,7 @@ export function mountSearchApp(root, options = {}) {
   const container = document.createElement("div");
   container.className = "cds-search-app";
   root.appendChild(container);
-  ReactDOM.render(
+  createRoot(container).render(
     <SearchApp
       endpoint={data.searchEndpoint}
       headers={parseJSON(data.searchHeaders, {})}
@@ -176,8 +177,7 @@ export function mountSearchApp(root, options = {}) {
       appName={data.searchAppName || null}
     >
       {portals}
-    </SearchApp>,
-    container
+    </SearchApp>
   );
 
   if (options.loadingBar !== false) {
