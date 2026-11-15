@@ -26,13 +26,13 @@
 
 
 import copy
+import importlib.resources
 import json
 import os
 import random
 import uuid
+from io import BytesIO
 from os.path import join
-
-import importlib.resources
 
 from celery import shared_task, states
 from flask import current_app
@@ -44,7 +44,6 @@ from invenio_indexer.api import RecordIndexer
 from invenio_pidstore import current_pidstore
 from invenio_records import Record
 from invenio_search import current_search_client
-from six import BytesIO
 
 from cds.modules.deposit.api import Project, Video, deposit_project_resolver
 from cds.modules.flows.api import FlowService

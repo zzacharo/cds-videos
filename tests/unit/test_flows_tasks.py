@@ -25,9 +25,9 @@
 
 import threading
 import uuid
+from io import BytesIO
 
 import mock
-from cds.modules.flows.api import FlowService
 import pytest
 from celery import states
 from celery.exceptions import Retry
@@ -50,7 +50,6 @@ from invenio_pidstore.models import PersistentIdentifier
 from invenio_records import Record
 from invenio_records.models import RecordMetadata
 from jsonschema.exceptions import ValidationError
-from six import BytesIO
 from sqlalchemy.orm.exc import ConcurrentModificationError
 from werkzeug.utils import import_string
 
@@ -60,11 +59,12 @@ from cds.modules.deposit.api import (
     deposit_project_resolver,
     deposit_video_resolver,
 )
+from cds.modules.flows.api import FlowService
 from cds.modules.flows.models import FlowMetadata, FlowTaskMetadata
 from cds.modules.flows.tasks import (
     DownloadTask,
-    ExtractFramesTask,
     ExtractChapterFramesTask,
+    ExtractFramesTask,
     ExtractMetadataTask,
     TranscodeVideoTask,
     sync_records_with_deposit_files,

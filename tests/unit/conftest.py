@@ -32,6 +32,7 @@ import shutil
 import sys
 import tempfile
 from datetime import datetime
+from io import BytesIO
 from os.path import dirname, join
 from time import sleep
 from uuid import uuid4
@@ -72,14 +73,13 @@ from invenio_previewer import InvenioPreviewer
 from invenio_search import InvenioSearch, current_search, current_search_client
 from invenio_search.engine import search
 from invenio_sequencegenerator.api import Template
-from six import BytesIO
 from sqlalchemy_utils.functions import create_database, database_exists
 
 from cds.modules.deposit.api import Project, Video
 from cds.modules.invenio_deposit.permissions import action_admin_access
+from cds.modules.records.permissions import upload_access_action
 from cds.modules.records.resolver import record_resolver
 from cds.modules.redirector.views import api_blueprint as cds_api_blueprint
-from cds.modules.records.permissions import upload_access_action
 
 
 @pytest.yield_fixture(scope="module", autouse=True)
