@@ -35,22 +35,7 @@ You include one of the bundles in a page like the example below (using
 
 """
 
-from flask_webpackext import WebpackBundleProject
 from invenio_assets.webpack import WebpackThemeBundle
-from pywebpack import bundles_from_entry_point
-
-# The bundles of all the Invenio modules, built with rspack instead of webpack
-# (about ten times faster). Enable it with
-# ``WEBPACKEXT_PROJECT = "cds.modules.theme.webpack:rspack_project"``.
-# ``rspack/`` holds the package.json and rspack.config.js of Invenio-Assets
-# 3.2 (``invenio_assets.webpack:rspack_project``) with rspack 1.x, which runs
-# on Node.js 18.12 and later.
-rspack_project = WebpackBundleProject(
-    __name__,
-    project_folder="rspack",
-    config_path="build/config.json",
-    bundles=bundles_from_entry_point("invenio_assets.webpack"),
-)
 
 theme = WebpackThemeBundle(
     __name__,
