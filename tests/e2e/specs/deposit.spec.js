@@ -92,10 +92,10 @@ test.describe("uploads of a user", () => {
       page.getByRole("button", { name: "Publish Project and Videos" })
     ).toBeVisible();
     // The description editors load (in collapsed panels too): CKEditor
-    // ("Rich Text Editor") or HugeRTE ("Rich Text Area")
+    // ("Rich Text Editor") or HugeRTE ("Rich Text Area", about 1 MB)
     await expect(
       page.locator("iframe[title^='Rich Text']").first()
-    ).toBeAttached();
+    ).toBeAttached({ timeout: 20000 });
     // One panel per video
     const videos = (titled.metadata.videos || []).length;
     if (videos > 0) {
