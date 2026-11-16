@@ -34,6 +34,7 @@ import {
   validationError,
 } from "./deposit";
 import { ActionTypes } from "./reducer";
+import { isDraft } from "./records";
 import { depositStorage } from "./registry";
 import { selectProject, selectProjectWithVideos } from "./selectors";
 
@@ -60,16 +61,15 @@ function request(state, id, actionName) {
 }
 
 /**
- * Save the draft videos first, then the project: the response of the
- * project contains the videos, which must be up to date.
+ * Save the draft videos first, then the project if it is a draft: the
+ * response of the project contains the videos, which must be up to date.
+ * ``except`` is a deposit that the action saves itself.
  */
-function saveAllRequests(getState) {
+function saveAllRequests(getState, except) {
   const state = getState();
-  const drafts = state.page.videoIds.filter(
-    (id) => state.deposits[id].record._deposit.status === "draft"
-  );
-  return drafts
+  return state.page.videoIds
     .concat(state.page.projectId)
+    .filter((id) => id !== except && isDraft(state.deposits[id].record))
     .map((id) => () => request(getState(), id, "SAVE_PARTIAL"));
 }
 
@@ -139,14 +139,15 @@ function onError(id, response) {
 export function runActions(id, userActions) {
   return (dispatch, getState, { queue }) => {
     const names = Array.isArray(userActions) ? userActions : [userActions];
-    const { type } = getState().deposits[id];
     dispatch(started(id));
     return queue(() => {
-      // Publishing a project saves the videos and the project first
-      const before =
-        names.includes("PUBLISH") && type === "project"
-          ? chainedActions(saveAllRequests(getState))
-          : Promise.resolve();
+      // Publishing saves the project and its videos first, so that no change
+      // of the page is lost
+      const before = names.includes("PUBLISH")
+        ? chainedActions(
+            saveAllRequests(getState, names.includes("SAVE") ? id : null)
+          )
+        : Promise.resolve();
       return before.then(() => {
         // The record of the first action, as before
         const state = getState();
