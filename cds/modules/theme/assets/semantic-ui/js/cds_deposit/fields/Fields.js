@@ -19,12 +19,14 @@
 
 import React, { Suspense, lazy, useContext, useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import clsx from "clsx";
 import { getIn, useFormikContext } from "formik";
 import _toPath from "lodash/toPath";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { Placeholder } from "semantic-ui-react";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
+import { prevent } from "@js/cds/utils";
 
 import { parseAutocomplete } from "../filters";
 import { removeBackendError, setRecordValue } from "../state/deposit";
@@ -73,15 +75,13 @@ export function useDepositField(name, errorName) {
   return { value, error, setValue, formik, id, dispatch };
 }
 
-/** The deposit of the form is published. */
-export function usePublished() {
-  const { id } = useDepositForm();
-  return useSelector((state) => isPublished(state.deposits[id].record));
-}
-
 /** Read only when the deposit is published (``formDefaults.readonly``). */
 export function useReadonly(extra) {
-  return usePublished() || Boolean(extra);
+  const { id } = useDepositForm();
+  const published = useSelector((state) =>
+    isPublished(state.deposits[id].record)
+  );
+  return published || Boolean(extra);
 }
 
 export function FormGroup({
@@ -98,16 +98,10 @@ export function FormGroup({
 }) {
   return (
     <div
-      className={["field cds-form-group", error && "has-error", className]
-        .filter(Boolean)
-        .join(" ")}
+      className={clsx("field cds-form-group", error && "has-error", className)}
     >
       {!notitle && label && (
-        <label
-          className={["control-label", required && "field-required"]
-            .filter(Boolean)
-            .join(" ")}
-        >
+        <label className={clsx("control-label", required && "field-required")}>
           {faIcon && <i className={`fa fa-fw ${faIcon}`} />}
           {nbsp && " "}
           {label}
@@ -157,7 +151,7 @@ export function TextField({
         name={_toPath(name).slice(-1)[0]}
         className="cds-form-control"
         placeholder={placeholder}
-        value={value === undefined || value === null ? "" : value}
+        value={value ?? ""}
         disabled={disabled}
         onChange={(e) => setValue(e.target.value)}
       />
@@ -274,11 +268,7 @@ export function CheckboxField({ name, label, description = null }) {
   const { value, error, setValue } = useDepositField(name);
   const disabled = useReadonly();
   return (
-    <div
-      className={["cds-checkbox", error && "has-error"]
-        .filter(Boolean)
-        .join(" ")}
-    >
+    <div className={clsx("cds-checkbox", error && "has-error")}>
       <label>
         <input
           type="checkbox"
@@ -381,20 +371,13 @@ export function RichTextField({
   const [ready, setReady] = useState(false);
   const loading = <RichTextLoading html={value} />;
   return (
-    <div
-      className={["field cds-form-group", error && "has-error"]
-        .filter(Boolean)
-        .join(" ")}
+    <FormGroup
+      label={label}
+      required={required}
+      error={error}
+      nbsp={false}
+      noHelp
     >
-      {label && (
-        <label
-          className={["control-label", required && "field-required"]
-            .filter(Boolean)
-            .join(" ")}
-        >
-          {label}
-        </label>
-      )}
       <Suspense fallback={loading}>
         {!ready && loading}
         <div className={ready ? undefined : "cds-rich-text-starting"}>
@@ -408,7 +391,7 @@ export function RichTextField({
         </div>
       </Suspense>
       <span className="help-block">{error || description}</span>
-    </div>
+    </FormGroup>
   );
 }
 
@@ -436,12 +419,12 @@ export function KeywordsField({
     return (query) => autocompleteKeywords(keywords)(query);
   });
   return (
-    <div
-      className={["field cds-form-group", error && "has-error"]
-        .filter(Boolean)
-        .join(" ")}
+    <FormGroup
+      label={label}
+      error={error}
+      description={description}
+      nbsp={false}
     >
-      <label className="control-label">{label}</label>
       <AsyncMultiSelect
         values={value || []}
         getName={(item) => item.name}
@@ -454,8 +437,7 @@ export function KeywordsField({
         allowAdditions
         onChange={setValue}
       />
-      <div className="help-block">{error || description}</div>
-    </div>
+    </FormGroup>
   );
 }
 
@@ -482,31 +464,18 @@ export function RemoteSelectField({
   const { value, error, setValue } = useDepositField(name, errorName);
   const disabled = useReadonly();
   return (
-    <div
-      className={[
-        "field cds-form-group schema-form-uiselect",
-        error && "has-error",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+    <FormGroup
+      label={label}
+      required={required}
+      error={error}
+      description={description}
+      className="schema-form-uiselect"
     >
-      <label
-        className={["control-label", required && "field-required"]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        {" "}
-        {label}
-      </label>
       <AsyncSelect
         text={parseAutocomplete(value) || ""}
         // ui-select showed the placeholder only without a value (an empty
         // contributor ``{}`` is a value)
-        placeholder={
-          value === undefined || value === null || value === ""
-            ? placeholder
-            : ""
-        }
+        placeholder={(value ?? "") === "" ? placeholder : ""}
         fetchOptions={fetchOptions}
         minLength={minLength}
         delay={delay}
@@ -515,8 +484,7 @@ export function RemoteSelectField({
           onSelect ? onSelect(item, setValue) : setValue(item.value)
         }
       />
-      <div className="help-block">{error || description}</div>
-    </div>
+    </FormGroup>
   );
 }
 
@@ -563,19 +531,15 @@ export function ArrayField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const minLength = 1;
   return (
     <div
-      className={["form-group schema-form-array clearfix", error && "has-error"]
-        .filter(Boolean)
-        .join(" ")}
+      className={clsx(
+        "form-group schema-form-array clearfix",
+        error && "has-error"
+      )}
     >
       {!notitle && label && (
-        <label
-          className={["control-label", required && "field-required"]
-            .filter(Boolean)
-            .join(" ")}
-        >
+        <label className={clsx("control-label", required && "field-required")}>
           {" "}
           {label}
         </label>
@@ -587,25 +551,21 @@ export function ArrayField({
             // eslint-disable-next-line react/no-array-index-key
             <li
               key={index}
-              className={[
+              className={clsx(
                 "cds-list-group-item",
                 inline && "deposit-inline",
-                first && "bg-warn",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+                first && "bg-warn"
+              )}
             >
               {!first && (
                 <div
-                  className={[
+                  className={clsx(
                     "close-container pull-right",
-                    !inline && "clear-form",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
+                    !inline && "clear-form"
+                  )}
                   style={{ paddingBottom: "20px" }}
                 >
-                  {!(disabled || items.length <= minLength) && (
+                  {!(disabled || items.length <= 1) && (
                     <button
                       className="cds-close"
                       type="button"
@@ -640,10 +600,9 @@ export function ArrayField({
           <a
             href="#add"
             className="add-button"
-            onClick={(e) => {
-              e.preventDefault();
-              setValue(items.concat([newItem ? newItem() : {}]));
-            }}
+            onClick={prevent(() =>
+              setValue(items.concat([newItem ? newItem() : {}]))
+            )}
           >
             <i className="fa fa-plus" />
             &nbsp;{add || "Add"}
@@ -673,13 +632,7 @@ export function CustomAuthorsInfo() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <a
-        href="#info"
-        onClick={(e) => {
-          e.preventDefault();
-          setOpen(true);
-        }}
-      >
+      <a href="#info" onClick={prevent(() => setOpen(true))}>
         <i className="pull-right fa fa-info" />
       </a>
       <DialogModal
@@ -794,10 +747,7 @@ export function Fieldset({ title, description = null, children = null }) {
           <a
             className="panel-toggle"
             href="#toggle"
-            onClick={(e) => {
-              e.preventDefault();
-              setCollapsed(!collapsed);
-            }}
+            onClick={prevent(() => setCollapsed(!collapsed))}
           >
             {title}
             <span className="pull-right">

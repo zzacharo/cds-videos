@@ -17,6 +17,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
+import { prevent } from "@js/cds/utils";
 
 import { DEPOSIT_STATUSES, urlBuilder } from "../constants";
 import { RestrictionsBox } from "../fields/Access";
@@ -58,6 +59,7 @@ import {
   ProgressBar,
   Tabs,
   TaskList,
+  TipsBox,
   VideoPreview,
   show,
 } from "./common";
@@ -92,33 +94,21 @@ function VideoActions({ id }) {
         open={deleteShown}
         onClose={() => setDeleteShown(false)}
         title="Delete video"
+        buttons={[
+          ["Yes", "green", actions.remove],
+          ["No", "red"],
+        ]}
       >
         Are you sure you want permanently delete the video?
-        <hr className="mt-30 mb-10" />
-        <p className="pull-right">
-          <button
-            type="button"
-            className="ui green button"
-            onClick={() => {
-              actions.remove();
-              setDeleteShown(false);
-            }}
-          >
-            Yes
-          </button>
-          <button
-            type="button"
-            className="ui red button"
-            onClick={() => setDeleteShown(false)}
-          >
-            No
-          </button>
-        </p>
       </DialogModal>
       <DialogModal
         open={publishShown}
         onClose={() => setPublishShown(false)}
         title="Publish video"
+        buttons={[
+          ["No", "basic"],
+          ["Yes", "green", actions.publishVideo],
+        ]}
       >
         The video workflow is still processing.
         <br />
@@ -134,46 +124,17 @@ function VideoActions({ id }) {
         <br />
         Do you want publish the video?
         <br />
-        <hr className="mt-30 mb-10" />
-        <p className="pull-right">
-          <button
-            type="button"
-            className="ui basic button"
-            onClick={() => setPublishShown(false)}
-          >
-            No
-          </button>
-          <button
-            type="button"
-            className="ui green button"
-            onClick={() => {
-              actions.publishVideo();
-              setPublishShown(false);
-            }}
-          >
-            Yes
-          </button>
-        </p>
       </DialogModal>
       <DialogModal
         open={cannotEditShown}
         onClose={() => setCannotEditShown(false)}
         title="Cannot edit the video"
+        buttons={[["Close", "primary"]]}
       >
         You cannot edit the video if the project is published.
         <br />
         Please <strong>edit the project first</strong>, and then edit the video.
         <br />
-        <hr className="mt-30 mb-10" />
-        <p className="pull-right">
-          <button
-            type="button"
-            className="ui primary button"
-            onClick={() => setCannotEditShown(false)}
-          >
-            Close
-          </button>
-        </p>
       </DialogModal>
       <div className="text-right">
         {loading && (
@@ -205,27 +166,14 @@ function VideoActions({ id }) {
             >
               {actionLoading ? "Saving ..." : "Save"}
             </button>{" "}
-          </>
-        )}
-        {success && !published && (
-          <>
-            <button
-              type="button"
-              className="ui small primary button"
-              disabled={!framesReady || loading || !success}
-              onClick={actions.publishVideo}
-            >
-              {actionLoading ? "Publishing ..." : "Publish"}
-            </button>{" "}
-          </>
-        )}
-        {!success && !published && (
-          <>
             <button
               type="button"
               className="ui small primary button"
               disabled={!framesReady || loading}
-              onClick={() => setPublishShown(true)}
+              // Still processing: confirm first
+              onClick={
+                success ? actions.publishVideo : () => setPublishShown(true)
+              }
             >
               {actionLoading ? "Publishing ..." : "Publish"}
             </button>{" "}
@@ -295,6 +243,10 @@ function ExtractedMetadata({ id }) {
         open={open}
         onClose={() => setOpen(false)}
         title="Are you sure you want to use the following metadata?"
+        buttons={[
+          ["No", "basic", () => actions.fillMetadata(false)],
+          ["Yes", "green", () => actions.fillMetadata(true)],
+        ]}
       >
         <ul>
           {Object.entries(toDisplay).map(([key, value]) => (
@@ -304,29 +256,6 @@ function ExtractedMetadata({ id }) {
             </li>
           ))}
         </ul>
-        <hr className="mt-30 mb-10" />
-        <p className="pull-right">
-          <button
-            type="button"
-            className="ui basic button"
-            onClick={() => {
-              actions.fillMetadata(false);
-              setOpen(false);
-            }}
-          >
-            No
-          </button>
-          <button
-            type="button"
-            className="ui green button"
-            onClick={() => {
-              actions.fillMetadata(true);
-              setOpen(false);
-            }}
-          >
-            Yes
-          </button>
-        </p>
       </DialogModal>
     </div>
   );
@@ -357,33 +286,14 @@ function InheritButton({ id }) {
         open={open}
         onClose={() => setOpen(false)}
         title="Inherit metadata from the project"
+        buttons={[
+          ["Only the missing fields", "basic", () => inheritMetadata(false)],
+          ["Replace all metadata", "basic", () => inheritMetadata(true)],
+        ]}
       >
         <p className="text-left">
           Please select if you would like to replace all metadata of this video
           or inherit only the missing metadata from the project.
-        </p>
-        <hr className="mt-30 mb-10" />
-        <p className="pull-right">
-          <button
-            type="button"
-            className="ui basic button"
-            onClick={() => {
-              inheritMetadata(false);
-              setOpen(false);
-            }}
-          >
-            Only the missing fields
-          </button>
-          <button
-            type="button"
-            className="ui basic button"
-            onClick={() => {
-              inheritMetadata(true);
-              setOpen(false);
-            }}
-          >
-            Replace all metadata
-          </button>
         </p>
       </DialogModal>
     </div>
@@ -407,13 +317,11 @@ function VideoSidebar({ id, onTranscodeInfo }) {
             <div className="cds-row">
               <div className="cds-col-md-6">
                 <p className="mb-0">Category</p>
-                {master.category && (
-                  <p>
-                    <span className="ui label cds-label cds-label-default">
-                      {master.category}
-                    </span>
-                  </p>
-                )}
+                <p>
+                  <span className="ui label cds-label cds-label-default">
+                    {master.category}
+                  </span>
+                </p>
               </div>
               <div className="cds-col-md-6">
                 <p className="mb-0">Type</p>
@@ -438,13 +346,11 @@ function VideoSidebar({ id, onTranscodeInfo }) {
             please select category and type from the{" "}
             <a
               href={`#${master._deposit.id}`}
-              onClick={(e) => {
-                e.preventDefault();
-                const target = document.getElementById(master._deposit.id);
-                if (target) {
-                  target.scrollIntoView({ behavior: "smooth" });
-                }
-              }}
+              onClick={prevent(() =>
+                document
+                  .getElementById(master._deposit.id)
+                  ?.scrollIntoView({ behavior: "smooth" })
+              )}
             >
               Project
             </a>
@@ -541,6 +447,33 @@ function BasicInfo({ id }) {
 
 BasicInfo.propTypes = { id: PropTypes.string.isRequired };
 
+const running = (status) => status === "PENDING" || status === "STARTED";
+
+/** Restart icon of a task, a spinner while it runs. */
+function RestartLink({ status, blocked, onRestart }) {
+  return (
+    <a
+      href="#restart"
+      className="pull-right"
+      style={blocked ? { pointerEvents: "none" } : undefined}
+      onClick={prevent(onRestart)}
+    >
+      <i
+        style={show(status === "SUCCESS" || status === "FAILURE")}
+        className={`fa fa-refresh ${status}`}
+        aria-hidden="true"
+      />
+      <i style={show(running(status))} className="fa fa-spinner fa-spin" />
+    </a>
+  );
+}
+
+RestartLink.propTypes = {
+  status: PropTypes.string,
+  blocked: PropTypes.bool.isRequired,
+  onRestart: PropTypes.func.isRequired,
+};
+
 function RestartTasks({ id }) {
   const { record, tasksByName } = useDeposit(id);
   const actions = useDepositActions(id);
@@ -551,10 +484,7 @@ function RestartTasks({ id }) {
         <a
           href="#restart"
           className="cds-btn-link cds-btn-xs pull-right"
-          onClick={(e) => {
-            e.preventDefault();
-            actions.restartFlow();
-          }}
+          onClick={prevent(actions.restartFlow)}
         >
           <i className="fa fa-refresh" aria-hidden="true" /> Restart All
         </a>
@@ -563,8 +493,6 @@ function RestartTasks({ id }) {
         {Object.entries(tasksByName || {}).map(([name, data]) => {
           const first = data[0] || {};
           const payload = (first.info && first.info.payload) || {};
-          const running = (status) =>
-            status === "PENDING" || status === "STARTED";
           if (name === "file_transcode") {
             return (
               <ul className="cds-list-group" key={name}>
@@ -603,35 +531,17 @@ function RestartTasks({ id }) {
                           <span className="ui label cds-label cds-label-default">
                             {task.status}
                           </span>
-                          <a
-                            href="#restart"
-                            className="pull-right"
-                            style={
-                              blocked ? { pointerEvents: "none" } : undefined
+                          <RestartLink
+                            status={task.status}
+                            blocked={blocked}
+                            onRestart={() =>
+                              !(isDraft(record) || blocked) &&
+                              actions.restartTask(
+                                taskPayload.flow_id,
+                                taskPayload.task_id
+                              )
                             }
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (!(isDraft(record) || blocked)) {
-                                actions.restartTask(
-                                  taskPayload.flow_id,
-                                  taskPayload.task_id
-                                );
-                              }
-                            }}
-                          >
-                            <i
-                              style={show(
-                                task.status === "SUCCESS" ||
-                                  task.status === "FAILURE"
-                              )}
-                              className={`fa fa-refresh ${task.status}`}
-                              aria-hidden="true"
-                            />
-                            <i
-                              style={show(running(task.status))}
-                              className="fa fa-spinner fa-spin"
-                            />
-                          </a>
+                          />
                         </li>
                       </ul>
                     );
@@ -647,33 +557,14 @@ function RestartTasks({ id }) {
                 <span className="ui label cds-label cds-label-default">
                   {first.status}
                 </span>
-                <a
-                  href="#restart"
-                  className="pull-right"
-                  style={
-                    running(first.status)
-                      ? { pointerEvents: "none" }
-                      : undefined
+                <RestartLink
+                  status={first.status}
+                  blocked={running(first.status)}
+                  onRestart={() =>
+                    first.status !== "PENDING" &&
+                    actions.restartTask(payload.flow_id, payload.task_id)
                   }
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (first.status !== "PENDING") {
-                      actions.restartTask(payload.flow_id, payload.task_id);
-                    }
-                  }}
-                >
-                  <i
-                    style={show(
-                      first.status === "SUCCESS" || first.status === "FAILURE"
-                    )}
-                    className={`fa fa-refresh ${first.status}`}
-                    aria-hidden="true"
-                  />
-                  <i
-                    style={show(running(first.status))}
-                    className="fa fa-spinner fa-spin"
-                  />
-                </a>
+                />
               </li>
             </ul>
           );
@@ -703,10 +594,7 @@ function AdminTab({ id }) {
           <div className="text-center">
             <a
               href="#metadata"
-              onClick={(e) => {
-                e.preventDefault();
-                setShowMetadata(!showMetadata);
-              }}
+              onClick={prevent(() => setShowMetadata(!showMetadata))}
             >
               {" "}
               {showMetadata ? "Hide" : "Show"} metadata
@@ -769,17 +657,12 @@ function VideoTabs({ id }) {
           </form>
           {!isPublished(record) && (
             <div className="cds-deposit-box">
-              <div className="text-muted">
-                <h5 className="text-muted">
-                  <strong>Tips and suggestions</strong>
-                </h5>
-                <ul>
-                  <li>
-                    You can upload subtitle files in the <strong>Files</strong>{" "}
-                    tab.
-                  </li>
-                </ul>
-              </div>
+              <TipsBox>
+                <li>
+                  You can upload subtitle files in the <strong>Files</strong>{" "}
+                  tab.
+                </li>
+              </TipsBox>
             </div>
           )}
         </div>

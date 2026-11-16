@@ -14,6 +14,7 @@ import PropTypes from "prop-types";
 /**
  * Dialog with a title and a close button, rendered in place with the markup
  * and the styles of the former ``modal-dialog`` (ngModal) directive.
+ * ``buttons`` are ``[label, color, onClick]``: each one also closes it.
  */
 export function DialogModal({
   open,
@@ -21,6 +22,7 @@ export function DialogModal({
   title = null,
   children = null,
   className = null,
+  buttons = null,
 }) {
   return (
     <div
@@ -42,7 +44,29 @@ export function DialogModal({
             <span className="ng-modal-close-x">X</span>
           </div>
         </div>
-        <div className="ng-modal-dialog-content">{open && children}</div>
+        <div className="ng-modal-dialog-content">
+          {open && children}
+          {open && buttons && (
+            <>
+              <hr className="mt-30 mb-10" />
+              <p className="pull-right">
+                {buttons.map(([label, color, onClick]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`ui ${color} button`}
+                    onClick={() => {
+                      if (onClick) onClick();
+                      onClose();
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </p>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -54,4 +78,5 @@ DialogModal.propTypes = {
   title: PropTypes.node,
   children: PropTypes.node,
   className: PropTypes.string,
+  buttons: PropTypes.array,
 };

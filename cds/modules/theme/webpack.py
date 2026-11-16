@@ -78,6 +78,8 @@ theme = WebpackThemeBundle(
                 "redux-thunk": "^2.3.0",
                 "axios": "^1.7.7",
                 "lodash": "^4.17.4",
+                # Same range as semantic-ui-react, so one copy
+                "clsx": "^1.1.1",
                 "qs": "^6.8.0",
                 "d3": "^3.5.17",
                 "vtt.js": "~0.13.0",

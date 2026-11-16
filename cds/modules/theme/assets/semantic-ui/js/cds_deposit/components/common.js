@@ -29,6 +29,23 @@ export function show(condition) {
   return { display: condition ? undefined : "none" };
 }
 
+/** "Tips and suggestions" with the items in ``children``. */
+export function TipsBox({ className = "text-muted", children }) {
+  return (
+    <div className={className}>
+      <h5 className="text-muted">
+        <strong>Tips and suggestions</strong>
+      </h5>
+      <ul>{children}</ul>
+    </div>
+  );
+}
+
+TipsBox.propTypes = {
+  className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+};
+
 /** Bootstrap like panel (``panel panel-default``). */
 export function Panel({
   className = null,

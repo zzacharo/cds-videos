@@ -497,3 +497,11 @@ export function getVttSubtitles(record) {
 }
 
 export const isEmpty = _isEmpty;
+
+/** Click handler of a link that runs ``fn`` instead of following it. */
+export function prevent(fn) {
+  return (e) => {
+    e.preventDefault();
+    fn();
+  };
+}

@@ -15,6 +15,7 @@
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+import clsx from "clsx";
 import _orderBy from "lodash/orderBy";
 
 import { DialogModal } from "@js/cds/components/DialogModal";
@@ -23,7 +24,7 @@ import {
   angularFilter,
   bytesToHumanReadable,
   findBy,
-  removeBy,
+  prevent,
 } from "@js/cds/utils";
 
 import { toInt } from "../filters";
@@ -41,26 +42,84 @@ import {
   validateSubtitles,
 } from "../state/uploads";
 import { DropZone } from "./DropZone";
-import { InfoDialog, show } from "./common";
+import { InfoDialog, TipsBox, show } from "./common";
 
 function limitTo(text, length) {
   return (text || "").slice(0, length);
 }
 
-function FileName({ file }) {
+function FileName({ file, children = null }) {
   return (
     <td title={file.key}>
       {limitTo(file.key, 40)}{" "}
-      <span
-        style={{ display: (file.key || "").length > 40 ? undefined : "none" }}
-      >
-        ...
-      </span>
+      <span style={show((file.key || "").length > 40)}>...</span>
+      {children}
     </td>
   );
 }
 
-FileName.propTypes = { file: PropTypes.object.isRequired };
+FileName.propTypes = {
+  file: PropTypes.object.isRequired,
+  children: PropTypes.node,
+};
+
+const FILES_HEADER = (
+  <tr>
+    <th>Filename</th>
+    <th>Size</th>
+    <th className="text-center">Progress</th>
+    <th className="text-center">Actions</th>
+  </tr>
+);
+
+function SearchRow({ files, search, setSearch }) {
+  return (
+    <div className="cds-row">
+      <div className="cds-col-sm-6">
+        <p style={show(files.length > 0)} className="text-muted" />
+      </div>
+      <div className="cds-col-sm-12">
+        <div className="form-group">
+          <input
+            type="text"
+            className="cds-form-control input-sm"
+            placeholder="Search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+SearchRow.propTypes = {
+  files: PropTypes.array.isRequired,
+  search: PropTypes.string.isRequired,
+  setSearch: PropTypes.func.isRequired,
+};
+
+/** Drop zone content of the video uploads. */
+function UploadBox({ icon, title }) {
+  return (
+    <div className="pa-10 cds-deposit-box-upload-wrapper text-center">
+      <p className="cds-deposit-box-upload-icon mb-20">
+        <i className={`fa ${icon}`} aria-hidden="true" />
+      </p>
+      <div className="cds-deposit-box-upload-content">
+        <h4>{title}</h4>
+        <p className="cds-deposit-box-upload-description">
+          Or Drag &amp; Drop files
+        </p>
+      </div>
+    </div>
+  );
+}
+
+UploadBox.propTypes = {
+  icon: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+};
 
 function FileSize({ file }) {
   return (
@@ -111,13 +170,7 @@ function HowToUpdateDialog() {
     <InfoDialog
       title="How to update the video file"
       trigger={(open) => (
-        <a
-          href="#info"
-          onClick={(e) => {
-            e.preventDefault();
-            open();
-          }}
-        >
+        <a href="#info" onClick={prevent(open)}>
           <i className="fa fa-info" />
         </a>
       )}
@@ -131,13 +184,7 @@ function HowToUpdateDialog() {
 
 function RemoveLink({ onRemove, file }) {
   return (
-    <a
-      href="#remove"
-      onClick={(e) => {
-        e.preventDefault();
-        onRemove(file.key);
-      }}
-    >
+    <a href="#remove" onClick={prevent(() => onRemove(file.key))}>
       <i className="fa fa-trash-o" />
     </a>
   );
@@ -190,10 +237,9 @@ function SortHeader({ label, field, sort, setSort }) {
     <th>
       <a
         href="#sort"
-        onClick={(e) => {
-          e.preventDefault();
-          setSort({ type: field, reverse: !sort.reverse });
-        }}
+        onClick={prevent(() =>
+          setSort({ type: field, reverse: !sort.reverse })
+        )}
       >
         {label}{" "}
         <span
@@ -223,19 +269,6 @@ function sortFiles(files, sort) {
   return _orderBy(files, [sort.type], [sort.reverse ? "desc" : "asc"]);
 }
 
-function TipsBox({ children }) {
-  return (
-    <div className="text-muted">
-      <h5 className="text-muted">
-        <strong>Tips and suggestions</strong>
-      </h5>
-      <ul>{children}</ul>
-    </div>
-  );
-}
-
-TipsBox.propTypes = { children: PropTypes.node.isRequired };
-
 /** Files of the project (``types/common/uploader.html``). */
 export function ProjectUploader({ id }) {
   const { record } = useDeposit(id);
@@ -258,22 +291,7 @@ export function ProjectUploader({ id }) {
       />
       <div className="cds-panel" style={show(files.length > 0)}>
         <div className="cds-panel-heading">
-          <div className="cds-row">
-            <div className="cds-col-sm-6">
-              <p style={show(files.length > 0)} className="text-muted" />
-            </div>
-            <div className="cds-col-sm-12">
-              <div className="form-group">
-                <input
-                  type="text"
-                  className="cds-form-control input-sm"
-                  placeholder="Search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+          <SearchRow files={files} search={search} setSearch={setSearch} />
         </div>
         <table className="cds-table">
           <tbody>
@@ -297,12 +315,10 @@ export function ProjectUploader({ id }) {
               <tr
                 // eslint-disable-next-line react/no-array-index-key
                 key={`${file.key}-${index}`}
-                className={[
+                className={clsx(
                   "sel-file",
-                  file.context_type === "master" && "active",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
+                  file.context_type === "master" && "active"
+                )}
               >
                 <FileName file={file} />
                 <FileSize file={file} />
@@ -337,10 +353,7 @@ export function ProjectUploader({ id }) {
               <td className="text-center">
                 <a
                   href="#subformats"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowSubformats(!showSubformats);
-                  }}
+                  onClick={prevent(() => setShowSubformats(!showSubformats))}
                 >
                   {showSubformats ? <span>Hide</span> : <span>Show</span>}
                 </a>
@@ -389,10 +402,7 @@ export function ProjectUploader({ id }) {
               <td className="text-center">
                 <a
                   href="#frames"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowFrames(!showFrames);
-                  }}
+                  onClick={prevent(() => setShowFrames(!showFrames))}
                 >
                   {showFrames ? <span>Hide</span> : <span>Show</span>}
                 </a>
@@ -453,17 +463,12 @@ export function ProjectUploader({ id }) {
         </div>
       )}
       {published && (
-        <div className="cds-deposit-box text-muted">
-          <h5 className="text-muted">
-            <strong>Tips and suggestions</strong>
-          </h5>
-          <ul>
-            <li>
-              Click the <strong>Edit Project</strong> button on the bottom right
-              corner to add more files.
-            </li>
-          </ul>
-        </div>
+        <TipsBox className="cds-deposit-box text-muted">
+          <li>
+            Click the <strong>Edit Project</strong> button on the bottom right
+            corner to add more files.
+          </li>
+        </TipsBox>
       )}
     </>
   );
@@ -518,16 +523,9 @@ export function VideoUploader({ id }) {
   const published = isPublished(record);
   const posters = findBy(files, "context_type", "poster") || [];
   const subtitles = findBy(files, "context_type", "subtitle") || [];
-  const others =
-    removeBy(
-      removeBy(
-        removeBy(files, "context_type", "poster"),
-        "context_type",
-        "master"
-      ),
-      "context_type",
-      "subtitle"
-    ) || [];
+  const others = files.filter(
+    (file) => !["poster", "master", "subtitle"].includes(file.context_type)
+  );
   const visibleOthers = angularFilter(others, search);
   const { addFiles } = actions;
 
@@ -544,24 +542,14 @@ export function VideoUploader({ id }) {
         <div className="cds-panel-heading">Main &amp; Subformats files</div>
         <table className="cds-table">
           <tbody>
-            <tr>
-              <th>Filename</th>
-              <th>Size</th>
-              <th className="text-center">Progress</th>
-              <th className="text-center">Actions</th>
-            </tr>
+            {FILES_HEADER}
             <tr className="active">
-              <td title={master.key}>
-                {limitTo(master.key, 40)}{" "}
-                <span style={show((master.key || "").length > 40)}>...</span>
+              <FileName file={master}>
                 {master.tags && master.tags.times_replaced && (
                   <span>
                     <a
                       href="#replaced"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setTimesReplacedOpen(true);
-                      }}
+                      onClick={prevent(() => setTimesReplacedOpen(true))}
                     >
                       {" "}
                       <span className="cds-badge">
@@ -582,14 +570,8 @@ export function VideoUploader({ id }) {
                     </DialogModal>
                   </span>
                 )}
-              </td>
-              <td>
-                {master.size !== undefined ? (
-                  <span>{bytesToHumanReadable(master.size)}</span>
-                ) : (
-                  <span>Unknown</span>
-                )}
-              </td>
+              </FileName>
+              <FileSize file={master} />
               <td className="text-center">
                 <span
                   style={show(
@@ -631,10 +613,7 @@ export function VideoUploader({ id }) {
               <td className="text-center">
                 <a
                   href="#subformats"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setHideSubformats(!hideSubformats);
-                  }}
+                  onClick={prevent(() => setHideSubformats(!hideSubformats))}
                 >
                   {hideSubformats ? <span>Show</span> : <span>Hide</span>}
                 </a>
@@ -687,10 +666,9 @@ export function VideoUploader({ id }) {
                       <a
                         href="#restart"
                         style={show(f.status_failure || f.status_success)}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          actions.restartTask(f.flow_id, f.task_id);
-                        }}
+                        onClick={prevent(() =>
+                          actions.restartTask(f.flow_id, f.task_id)
+                        )}
                       >
                         <i className="fa fa-undo" />
                       </a>
@@ -779,31 +757,11 @@ export function VideoUploader({ id }) {
       <div className="cds-panel">
         <div className="cds-panel-heading">Additional files</div>
         <div className="cds-panel-heading" style={show(others.length > 0)}>
-          <div className="cds-row">
-            <div className="cds-col-sm-6">
-              <p style={show(files.length > 0)} className="text-muted" />
-            </div>
-            <div className="cds-col-sm-12">
-              <div className="form-group">
-                <input
-                  type="text"
-                  className="cds-form-control input-sm"
-                  placeholder="Search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+          <SearchRow files={files} search={search} setSearch={setSearch} />
         </div>
         <table style={show(others.length > 0)} className="cds-table">
           <tbody>
-            <tr>
-              <th>Filename</th>
-              <th>Size</th>
-              <th className="text-center">Progress</th>
-              <th className="text-center">Actions</th>
-            </tr>
+            {FILES_HEADER}
             <tr style={show(visibleOthers.length === 0)}>
               <td colSpan="4" className="text-center text-muted">
                 {" "}
@@ -833,17 +791,10 @@ export function VideoUploader({ id }) {
                 validate={validateAdditionalFiles}
                 onFiles={addFiles}
               >
-                <div className="pa-10 cds-deposit-box-upload-wrapper text-center">
-                  <p className="cds-deposit-box-upload-icon mb-20">
-                    <i className="fa fa-3x fa-files-o" aria-hidden="true" />
-                  </p>
-                  <div className="cds-deposit-box-upload-content">
-                    <h4>Upload additional files for this video</h4>
-                    <p className="cds-deposit-box-upload-description">
-                      Or Drag &amp; Drop files
-                    </p>
-                  </div>
-                </div>
+                <UploadBox
+                  icon="fa-3x fa-files-o"
+                  title="Upload additional files for this video"
+                />
               </DropZone>
             </div>
           )}
@@ -865,39 +816,22 @@ export function VideoUploader({ id }) {
                 pattern={videoExtensions}
                 onFiles={actions.replaceMasterFile}
               >
-                <div className="pa-10 cds-deposit-box-upload-wrapper text-center">
-                  <p className="cds-deposit-box-upload-icon mb-20">
-                    <i
-                      className="fa fa-2x fa-video-camera"
-                      aria-hidden="true"
-                    />
-                  </p>
-                  <div className="cds-deposit-box-upload-content">
-                    <h4>
-                      To replace the video file, just upload a video here.
-                    </h4>
-                    <p className="cds-deposit-box-upload-description">
-                      Or Drag &amp; Drop files
-                    </p>
-                  </div>
-                </div>
+                <UploadBox
+                  icon="fa-2x fa-video-camera"
+                  title="To replace the video file, just upload a video here."
+                />
               </DropZone>
             </div>
           </div>
         </div>
       )}
       {published && (
-        <div className="cds-deposit-box text-muted">
-          <h5 className="text-muted">
-            <strong>Tips and suggestions</strong>
-          </h5>
-          <ul>
-            <li>
-              Click the <strong>Edit</strong> button on the top right corner to
-              add more files.
-            </li>
-          </ul>
-        </div>
+        <TipsBox className="cds-deposit-box text-muted">
+          <li>
+            Click the <strong>Edit</strong> button on the top right corner to
+            add more files.
+          </li>
+        </TipsBox>
       )}
     </>
   );
@@ -929,29 +863,19 @@ function SubtitlesBody({ subtitles, published, onRemove, addFiles }) {
           <mark>.srt</mark> files.
         </p>
         <hr className="my-10" />
-        <div className="text-muted text-left">
-          <h5 className="text-muted">
-            <strong>Tips and suggestions</strong>
-          </h5>
-          <ul>
-            <li>
-              Subtitle filename should have a valid ISO language code. Example:{" "}
-              <mark>subtitles_fr.vtt</mark> or <mark>subtitles_fr.srt</mark>{" "}
-            </li>
-          </ul>
-        </div>
+        <TipsBox className="text-muted text-left">
+          <li>
+            Subtitle filename should have a valid ISO language code. Example:{" "}
+            <mark>subtitles_fr.vtt</mark> or <mark>subtitles_fr.srt</mark>{" "}
+          </li>
+        </TipsBox>
       </DropZone>
     );
   }
   return (
     <table className="cds-table">
       <tbody>
-        <tr>
-          <th>Filename</th>
-          <th>Size</th>
-          <th className="text-center">Progress</th>
-          <th className="text-center">Actions</th>
-        </tr>
+        {FILES_HEADER}
         {subtitles.map((file, index) => (
           // eslint-disable-next-line react/no-array-index-key
           <tr className="sel-file" key={`${file.key}-${index}`}>
