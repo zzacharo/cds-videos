@@ -137,74 +137,69 @@ function onError(id, response) {
  * ...). A failure is reported, the returned promise resolves anyway.
  */
 export function runActions(id, userActions) {
-  return (dispatch, getState, { queue }) => {
+  return async (dispatch, getState, { queue }) => {
     const names = Array.isArray(userActions) ? userActions : [userActions];
     dispatch(started(id));
-    return queue(() => {
-      // Publishing saves the project and its videos first, so that no change
-      // of the page is lost
-      const before = names.includes("PUBLISH")
-        ? chainedActions(
+    try {
+      const responses = await queue(async () => {
+        // Publishing saves the project and its videos first, so that no
+        // change of the page is lost
+        if (names.includes("PUBLISH")) {
+          await chainedActions(
             saveAllRequests(getState, names.includes("SAVE") ? id : null)
-          )
-        : Promise.resolve();
-      return before.then(() => {
+          );
+        }
         // The record of the first action, as before
         const state = getState();
-        const responses = chainedActions(
+        const all = await chainedActions(
           names.map((name) => () => request(state, id, name))
         );
-        return Array.isArray(userActions)
-          ? responses
-          : responses.then((all) => all[0]);
+        return Array.isArray(userActions) ? all : all[0];
       });
-    })
-      .then(
-        (responses) => {
-          let message;
-          if (names.includes("DELETE")) {
-            message = "Successfully deleted.";
-          } else if (names.includes("PUBLISH")) {
-            message = "Successfully published.";
-          }
-          dispatch(onSuccess(id, responses, message));
-        },
-        (response) => dispatch(onError(id, response))
-      )
-      .finally(() => dispatch(finished(id)));
+      let message;
+      if (names.includes("DELETE")) {
+        message = "Successfully deleted.";
+      } else if (names.includes("PUBLISH")) {
+        message = "Successfully published.";
+      }
+      dispatch(onSuccess(id, responses, message));
+    } catch (response) {
+      dispatch(onError(id, response));
+    } finally {
+      dispatch(finished(id));
+    }
   };
 }
 
 /** Save the project and all its draft videos. */
 export function saveAll() {
-  return (dispatch, getState, { queue }) => {
+  return async (dispatch, getState, { queue }) => {
     const project = selectProject(getState());
-    if (!project) {
-      return Promise.resolve();
-    }
+    if (!project) return;
     const { id } = project;
     dispatch(started(id));
-    return queue(() => chainedActions(saveAllRequests(getState)))
-      .then(
-        (responses) => {
-          dispatch(setPristineAll());
-          dispatch(onSuccess(id, responses));
-        },
-        (response) => dispatch(onError(id, response))
-      )
-      .finally(() => dispatch(finished(id)));
+    try {
+      const responses = await queue(() =>
+        chainedActions(saveAllRequests(getState))
+      );
+      dispatch(setPristineAll());
+      dispatch(onSuccess(id, responses));
+    } catch (response) {
+      dispatch(onError(id, response));
+    } finally {
+      dispatch(finished(id));
+    }
   };
 }
 
 /** Delete a deposit: a video leaves the page. */
 export function deleteDeposit(id) {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     const { type } = getState().deposits[id];
-    return dispatch(runActions(id, "DELETE")).then(() => {
-      if (type === "video") {
-        dispatch(removeVideo(id));
-      }
-    });
+    await dispatch(runActions(id, "DELETE"));
+    if (type === "video") {
+      dispatch(removeVideo(id));
+    }
   };
 }
 

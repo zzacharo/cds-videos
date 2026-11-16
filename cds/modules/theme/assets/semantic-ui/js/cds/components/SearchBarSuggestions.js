@@ -25,22 +25,17 @@ const HISTORY_ICON = '<i class="fa fa-history text-primary pr-5"></i> ';
 const DEBOUNCE = { attach: 300, suggest: 200, blur: 150 };
 
 /** Remote suggestions: record titles followed by the search history. */
-export function suggestStateRemote(term) {
-  return http
-    .get("/api/records/", { params: { q: term }, ignoreLoadingBar: true })
-    .then((response) => {
-      let results = [];
-      if (response.data.hits.hits) {
-        response.data.hits.hits.forEach((value) => {
-          results.push({
-            label: value.metadata.title.title,
-            value: value.metadata.title.title,
-          });
-        });
-      }
-      results = results.concat(storage.get(HISTORY_PREFIX, HISTORY_KEY) || []);
-      return results;
-    });
+export async function suggestStateRemote(term) {
+  const response = await http.get("/api/records/", {
+    params: { q: term },
+    ignoreLoadingBar: true,
+  });
+  return (response.data.hits.hits || [])
+    .map((hit) => ({
+      label: hit.metadata.title.title,
+      value: hit.metadata.title.title,
+    }))
+    .concat(storage.get(HISTORY_PREFIX, HISTORY_KEY) || []);
 }
 
 /** Store a search in the history (``searchSuggestions.onSelect``). */
@@ -125,27 +120,25 @@ export function SearchBarSuggestions({
 
   function suggest(term) {
     clearTimeout(timers.current.suggest);
-    timers.current.suggest = setTimeout(() => {
+    timers.current.suggest = setTimeout(async () => {
       setSelectedIndex(0);
       waiting.current = true;
       if (typeof term === "string" && term.length > 0) {
-        suggestStateRemote(term)
-          .then(
-            (suggestions) => {
-              if (!attached.current) return;
-              if (suggestions && suggestions.length > 0) {
-                setResults([{ value: term, label: "" }].concat(suggestions));
-                setShow(true);
-              } else {
-                setResults([]);
-                hide();
-              }
-            },
-            () => hide()
-          )
-          .finally(() => {
-            waiting.current = false;
-          });
+        try {
+          const suggestions = await suggestStateRemote(term);
+          if (!attached.current) return;
+          if (suggestions && suggestions.length > 0) {
+            setResults([{ value: term, label: "" }].concat(suggestions));
+            setShow(true);
+          } else {
+            setResults([]);
+            hide();
+          }
+        } catch {
+          hide();
+        } finally {
+          waiting.current = false;
+        }
       } else {
         waiting.current = false;
         hide();

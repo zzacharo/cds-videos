@@ -116,36 +116,27 @@ function createDeposit(url, schema, type, extra) {
 
 /** Create the project of a new upload, with its other files. */
 function createProject(files) {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     const { projectInit, projectSchema } = getState().config;
     const unique = files.filter(
       (file, index) =>
         files.findIndex((other) => other.key === file.key) === index
     );
-    return createDeposit(projectInit, projectSchema, "project")
-      .then((response) => {
-        dispatch(setProject(response.data, unique));
-        dispatch(afterProject());
-        return resolveJSON(response.data.links.self);
-      })
-      .then((response) => {
-        const { id } = selectProject(getState());
-        dispatch({
-          type: ActionTypes.RECORD_MERGED,
-          id,
-          metadata: response.data.metadata,
-        });
-        dispatch({
-          type: ActionTypes.DEPOSIT_PATCHED,
-          id,
-          patch: {
-            links: {
-              ...selectProject(getState()).links,
-              ...response.data.links,
-            },
-          },
-        });
-      });
+    const created = await createDeposit(projectInit, projectSchema, "project");
+    dispatch(setProject(created.data, unique));
+    dispatch(afterProject());
+    const response = await resolveJSON(created.data.links.self);
+    const { id, links } = selectProject(getState());
+    dispatch({
+      type: ActionTypes.RECORD_MERGED,
+      id,
+      metadata: response.data.metadata,
+    });
+    dispatch({
+      type: ActionTypes.DEPOSIT_PATCHED,
+      id,
+      patch: { links: { ...links, ...response.data.links } },
+    });
   };
 }
 
@@ -169,10 +160,8 @@ function addVideo(response, files, entries) {
 
 /** Video files of a new upload: create the project if needed, one video each. */
 export function addVideoFiles(newFiles, invalidFiles) {
-  return (dispatch, getState) => {
-    if (!newFiles) {
-      return Promise.resolve();
-    }
+  return async (dispatch, getState) => {
+    if (!newFiles) return;
     const { config, page } = getState();
     const files = newFiles.filter(
       (file) => !(invalidFiles || []).includes(file)
@@ -180,7 +169,6 @@ export function addVideoFiles(newFiles, invalidFiles) {
     const local = files.map((file) => ({ ...localFile(file), file }));
     const filtered = filterOutFiles(local, config.videoExtensions);
     const strip = (entry) => _omit(entry, "file");
-    let project;
     if (page.status === "ready") {
       const { id } = selectProject(getState());
       dispatch({
@@ -188,65 +176,61 @@ export function addVideoFiles(newFiles, invalidFiles) {
         id,
         update: (current) => current.concat(filtered.project.map(strip)),
       });
-      project = Promise.resolve();
     } else {
-      project = dispatch(createProject(filtered.project.map(strip)));
+      await dispatch(createProject(filtered.project.map(strip)));
     }
-    return project.then(() => {
-      const state = getState();
-      const projectId = selectProject(state).id;
-      const uploaded = selectVideos(state)
-        .map((video) => findMasterFile(video.record))
-        .filter((master) => !_isEmpty(master))
-        .map((master) => master.key);
-      const duplicates = Object.values(filtered.videos)
-        .map((video) => video.key)
-        .filter((key) => uploaded.includes(key));
-      dispatch({ type: ActionTypes.DUPLICATE_VIDEOS, keys: duplicates });
-      if (duplicates.length > 0) {
-        toaster.pop({
-          type: "error",
-          title: "Duplicate video(s)!",
-          body: duplicates.join(", "),
-        });
+    const state = getState();
+    const projectId = selectProject(state).id;
+    const uploaded = selectVideos(state)
+      .map((video) => findMasterFile(video.record))
+      .filter((master) => !_isEmpty(master))
+      .map((master) => master.key);
+    const duplicates = Object.values(filtered.videos)
+      .map((video) => video.key)
+      .filter((key) => uploaded.includes(key));
+    dispatch({ type: ActionTypes.DUPLICATE_VIDEOS, keys: duplicates });
+    if (duplicates.length > 0) {
+      toaster.pop({
+        type: "error",
+        title: "Duplicate video(s)!",
+        body: duplicates.join(", "),
+      });
+    }
+    if ((invalidFiles || []).length > 0) {
+      toaster.pop({
+        type: "error",
+        title: "Invalid file(s)",
+        body: invalidFiles.map((file) => file.name).join(", "),
+      });
+    }
+    // One video after the other, in the order of the files, until one
+    // fails
+    try {
+      for (const [basename, video] of Object.entries(filtered.videos)) {
+        if (duplicates.includes(video.key)) continue;
+        const response = await createDeposit(
+          config.videoInit,
+          config.videoSchema,
+          "video",
+          { _project_id: projectId, title: { title: basename } }
+        );
+        // From the deposit to the video basename (local storage)
+        depositStorage.set(
+          response.data.metadata._deposit.id,
+          "basename",
+          basename
+        );
+        const all = [video].concat(filtered.videoFiles[basename] || []);
+        dispatch(
+          addVideo(
+            response,
+            all.map((item) => item.file),
+            all.map(strip)
+          )
+        );
       }
-      if ((invalidFiles || []).length > 0) {
-        toaster.pop({
-          type: "error",
-          title: "Invalid file(s)",
-          body: invalidFiles.map((file) => file.name).join(", "),
-        });
-      }
-      // One video after the other, in the order of the files
-      return Object.entries(filtered.videos)
-        .filter(([, video]) => !duplicates.includes(video.key))
-        .reduce(
-          (previous, [basename, video]) =>
-            previous.then(() =>
-              createDeposit(config.videoInit, config.videoSchema, "video", {
-                _project_id: projectId,
-                title: { title: basename },
-              }).then((response) => {
-                // From the deposit to the video basename (local storage)
-                depositStorage.set(
-                  response.data.metadata._deposit.id,
-                  "basename",
-                  basename
-                );
-                const related = filtered.videoFiles[basename] || [];
-                const all = [video].concat(related);
-                dispatch(
-                  addVideo(
-                    response,
-                    all.map((item) => item.file),
-                    all.map(strip)
-                  )
-                );
-              })
-            ),
-          Promise.resolve()
-        )
-        .catch(() => {});
-    });
+    } catch {
+      // As before, the videos after a failed one are not created
+    }
   };
 }

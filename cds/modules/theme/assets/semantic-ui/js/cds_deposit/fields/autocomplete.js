@@ -38,15 +38,13 @@ function prependUserInput(userInput, suggestions) {
 }
 
 function autocomplete(url, paramsProvider, responseHandler, resultSize = 10) {
-  return (query) => {
-    if (!query) {
-      return Promise.resolve([]);
-    }
-    return http
-      .get(url, { params: paramsProvider(query), ignoreLoadingBar: false })
-      .then((response) =>
-        responseHandler(response, query).slice(0, resultSize)
-      );
+  return async (query) => {
+    if (!query) return [];
+    const response = await http.get(url, {
+      params: paramsProvider(query),
+      ignoreLoadingBar: false,
+    });
+    return responseHandler(response, query).slice(0, resultSize);
   };
 }
 
@@ -156,19 +154,21 @@ export function autocompleteAuthors(url, extraParams) {
 }
 
 /** E-groups and people for the access fields (``autocompleteAccess``). */
-export function autocompleteAccess(query) {
+export async function autocompleteAccess(query) {
   const userInput = query.length
     ? [{ name: query, email: query, isUserInput: true }]
     : [];
-  return autocompleteAuthors("/api/ldap/cern-egroups/")(query).then(
-    (results) =>
-      userInput.concat(
-        results.map((res) => ({
-          name: res.value.name,
-          email: res.value.email,
-          isUserInput: false,
-        }))
-      ),
-    () => userInput
+  let results = [];
+  try {
+    results = await autocompleteAuthors("/api/ldap/cern-egroups/")(query);
+  } catch {
+    // The user input only
+  }
+  return userInput.concat(
+    results.map((res) => ({
+      name: res.value.name,
+      email: res.value.email,
+      isUserInput: false,
+    }))
   );
 }

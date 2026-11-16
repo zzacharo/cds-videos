@@ -152,23 +152,16 @@ export function buildChapterFrames(record, chapters) {
 }
 
 /** Fetch and parse a VTT file: cues keyed by their text. */
-export function parseVttFromUrl(url) {
-  return fetch(url)
-    .then((res) => res.text())
-    .then((vttText) => {
-      const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
-      const cues = {};
-      parser.oncue = (cue) => {
-        cues[cue.text] = {
-          start: cue.startTime,
-          end: cue.endTime,
-          text: cue.text,
-        };
-      };
-      parser.parse(vttText);
-      parser.flush();
-      return cues;
-    });
+export async function parseVttFromUrl(url) {
+  const vttText = await (await fetch(url)).text();
+  const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+  const cues = {};
+  parser.oncue = (cue) => {
+    cues[cue.text] = { start: cue.startTime, end: cue.endTime, text: cue.text };
+  };
+  parser.parse(vttText);
+  parser.flush();
+  return cues;
 }
 
 /** Lines of a transcript containing the search term. */

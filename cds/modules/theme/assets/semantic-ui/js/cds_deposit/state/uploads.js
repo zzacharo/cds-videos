@@ -90,13 +90,14 @@ function setUploadState(id, status) {
 
 /** Upload a local file, then start the video workflow of a video file. */
 function uploadFile(id, { file, key, headers, entry }) {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     const { record } = getState().deposits[id];
     const extensions = getState().config.videoExtensions;
     const bucket = record._buckets.deposit;
     dispatch(setUploadState(id, "STARTED"));
-    return http
-      .request({
+    let response;
+    try {
+      response = await http.request({
         url: `${urlBuilder.bucketVideo({ bucket })}/${key}`,
         method: "PUT",
         headers: {
@@ -117,90 +118,70 @@ function uploadFile(id, { file, key, headers, entry }) {
             updateFile(id, key, { percentage, completed: percentage === 100 })
           );
         },
-      })
-      .then(
-        (response) => {
-          dispatch(setUploadState(id, "SUCCESS"));
-          const data = { ...response.data, percentage: 100, completed: true };
-          dispatch(
-            updateFile(
-              id,
-              key,
-              data.tags ? _merge({}, data, data.tags) : data,
-              true
-            )
-          );
-          dispatch(reportUpload(id, "SUCCESS", 100));
-          const workflow =
-            !entry.isAdditional && videoBasename(key, extensions) !== null
-              ? http.request({
-                  method: "POST",
-                  url: FLOWS_RECEIVER,
-                  headers: { "Content-Type": "application/json" },
-                  data: {
-                    version_id: response.data.version_id,
-                    key,
-                    bucket_id: bucket,
-                    deposit_id: id,
-                  },
-                  ignoreLoadingBar: true,
-                })
-              : Promise.resolve();
-          return workflow.then((avcResponse) => {
-            if (avcResponse) {
-              dispatch(patchDeposit(id, { presets: avcResponse.data.presets }));
-            }
-            dispatch(refreshDeposits());
-            return response;
-          });
+      });
+    } catch (error) {
+      dispatch(reportUpload(id, "FAILURE"));
+      throw toResponse(error);
+    }
+    dispatch(setUploadState(id, "SUCCESS"));
+    const data = { ...response.data, percentage: 100, completed: true };
+    dispatch(
+      updateFile(id, key, data.tags ? _merge({}, data, data.tags) : data, true)
+    );
+    dispatch(reportUpload(id, "SUCCESS", 100));
+    if (!entry.isAdditional && videoBasename(key, extensions) !== null) {
+      const workflow = await http.request({
+        method: "POST",
+        url: FLOWS_RECEIVER,
+        headers: { "Content-Type": "application/json" },
+        data: {
+          version_id: response.data.version_id,
+          key,
+          bucket_id: bucket,
+          deposit_id: id,
         },
-        (error) => {
-          dispatch(reportUpload(id, "FAILURE"));
-          return Promise.reject(toResponse(error));
-        }
-      );
+        ignoreLoadingBar: true,
+      });
+      dispatch(patchDeposit(id, { presets: workflow.data.presets }));
+    }
+    dispatch(refreshDeposits());
+    return response;
   };
 }
 
 /** Upload the queue of a deposit, one file after the other. */
 export function upload(id) {
-  return (dispatch) => {
+  return async (dispatch) => {
     const queue = uploadQueue(id);
     if (queue.length === 0) {
       dispatch(patchDeposit(id, { waitingUpload: false }));
-      return Promise.resolve();
+      return;
     }
     window.addEventListener("beforeunload", preventBrowserClose);
     dispatch(patchDeposit(id, { uploading: true }));
-    const responses = [];
-    const next = () =>
-      queue.length === 0
-        ? Promise.resolve(responses)
-        : dispatch(uploadFile(id, queue.shift())).then((response) => {
-            responses.push(response);
-            return next();
-          });
-    return next()
-      .then(
-        (all) =>
-          toaster.pop({
-            type: "info",
-            title: "The file(s) has been successfully uploaded.",
-            body: all.map((response) => response.data.key).join(", "),
-          }),
-        (response) =>
-          toaster.pop({
-            type: "error",
-            title:
-              response.status === 400 && response.data && response.data.message
-                ? response.data.message
-                : "Error uploading the file(s).",
-          })
-      )
-      .finally(() => {
-        dispatch(patchDeposit(id, { waitingUpload: false, uploading: false }));
-        window.removeEventListener("beforeunload", preventBrowserClose);
+    const keys = [];
+    try {
+      while (queue.length > 0) {
+        const response = await dispatch(uploadFile(id, queue.shift()));
+        keys.push(response.data.key);
+      }
+      toaster.pop({
+        type: "info",
+        title: "The file(s) has been successfully uploaded.",
+        body: keys.join(", "),
       });
+    } catch (response) {
+      toaster.pop({
+        type: "error",
+        title:
+          response.status === 400 && response.data && response.data.message
+            ? response.data.message
+            : "Error uploading the file(s).",
+      });
+    } finally {
+      dispatch(patchDeposit(id, { waitingUpload: false, uploading: false }));
+      window.removeEventListener("beforeunload", preventBrowserClose);
+    }
   };
 }
 
@@ -340,7 +321,7 @@ export function closeNewMasterDialog(id, confirm) {
 
 /** Remove a file, from the server once uploaded. */
 export function removeFile(id, key) {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     const file = (getState().deposits[id].record._files || []).find(
       (item) => item.key === key
     );
@@ -357,22 +338,21 @@ export function removeFile(id, key) {
       dispatch(remove);
       return;
     }
-    http
-      .request({
+    try {
+      await http.request({
         url: file.links.version || file.links.deleteFile,
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-      })
-      .then(
-        () => {
-          dispatch(remove);
-          toaster.pop({
-            type: "success",
-            title: "The file has been succesfuly deleted.",
-          });
-        },
-        () => toaster.pop({ type: "error", title: "Error deleting the file." })
-      );
+      });
+    } catch {
+      toaster.pop({ type: "error", title: "Error deleting the file." });
+      return;
+    }
+    dispatch(remove);
+    toaster.pop({
+      type: "success",
+      title: "The file has been succesfuly deleted.",
+    });
   };
 }
 

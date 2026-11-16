@@ -90,7 +90,7 @@ function toResponse(error) {
  * Make a request, resolving and rejecting with the response. ``options``
  * are extra request options, like ``ignoreLoadingBar``.
  */
-export function action(url, method, payload, headers, options) {
+export async function action(url, method, payload, headers, options) {
   const config = {
     ...(options || {}),
     url,
@@ -100,44 +100,20 @@ export function action(url, method, payload, headers, options) {
   if (payload !== undefined && payload !== null && method !== "GET") {
     config.data = payload;
   }
-  return http.request(config).then(
-    (response) => response,
-    (error) => Promise.reject(toResponse(error))
-  );
+  try {
+    return await http.request(config);
+  } catch (error) {
+    throw toResponse(error);
+  }
 }
 
-/**
- * Run functions returning promises one after the other. Each item is a
- * function, or ``[function, callback]`` with a callback of its response.
- */
-export function chainedActions(promises) {
-  const queue = [...promises];
+/** Run functions returning promises one after the other. */
+export async function chainedActions(promises) {
   const data = [];
-  return new Promise((resolve, reject) => {
-    function next() {
-      if (queue.length === 0) {
-        resolve(data);
-        return;
-      }
-      let fn = queue.shift();
-      let callback;
-      if (typeof fn !== "function") {
-        callback = fn[1];
-        fn = fn[0];
-      }
-      fn().then(
-        (response) => {
-          data.push(response);
-          if (typeof callback === "function") {
-            callback(response);
-          }
-          next();
-        },
-        (error) => reject(error)
-      );
-    }
-    next();
-  });
+  for (const fn of promises) {
+    data.push(await fn());
+  }
+  return data;
 }
 
 /** Copy of the data without the files and the empty values. */
@@ -161,19 +137,18 @@ export function getUrlPath(url) {
   return parser.pathname;
 }
 
-export function resolveJSON(url) {
-  return http
-    .get(url, {
+export async function resolveJSON(url) {
+  try {
+    return await http.get(url, {
       headers: {
         "Cache-Control": "no-cache, no-store, must-revalidate",
         Pragma: "no-cache",
         Expires: 0,
       },
-    })
-    .then(
-      (response) => response,
-      (error) => Promise.reject(toResponse(error))
-    );
+    });
+  } catch (error) {
+    throw toResponse(error);
+  }
 }
 
 function containsLink(links, link) {

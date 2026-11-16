@@ -33,21 +33,20 @@ function useDebouncedSearch(fetchOptions, delay, minLength) {
       setLoading(false);
       return;
     }
-    timer.current = setTimeout(() => {
+    timer.current = setTimeout(async () => {
       const current = ++request.current;
       setLoading(true);
-      Promise.resolve(fetchOptions(query))
-        .then(
-          (items) => {
-            if (current === request.current) setResults(items || []);
-          },
-          () => {
-            if (current === request.current) setResults([]);
-          }
-        )
-        .finally(() => {
-          if (current === request.current) setLoading(false);
-        });
+      let items = [];
+      try {
+        items = (await fetchOptions(query)) || [];
+      } catch {
+        // No suggestions
+      }
+      // Only the answer of the latest search
+      if (current === request.current) {
+        setResults(items);
+        setLoading(false);
+      }
     }, delay);
   };
   return [results, loading, search, setResults];

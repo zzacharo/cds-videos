@@ -89,22 +89,20 @@ function refreshDeposit(id, metadata) {
  * the form is already shown (``cds.deposit.metadata.update.<id>``).
  */
 export function refreshDeposits() {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     const state = getState();
     const project = selectProject(state);
     const url =
       (project && project.links.self) || state.config.projectLinks.self;
-    return action(url, "GET", {}, undefined, BACKGROUND).then((response) => {
-      const { metadata } = response.data;
-      [metadata].concat(metadata.videos || []).forEach((depositMetadata) => {
-        const id = depositMetadata._deposit.id;
-        if (getState().deposits[id]) {
-          // eslint-disable-next-line no-use-before-define
-          dispatch(refreshDeposit(id, depositMetadata));
-          // eslint-disable-next-line no-use-before-define
-          dispatch(fetchTasks(id));
-        }
-      });
+    const response = await action(url, "GET", {}, undefined, BACKGROUND);
+    const { metadata } = response.data;
+    [metadata].concat(metadata.videos || []).forEach((depositMetadata) => {
+      const id = depositMetadata._deposit.id;
+      if (getState().deposits[id]) {
+        dispatch(refreshDeposit(id, depositMetadata));
+        // eslint-disable-next-line no-use-before-define
+        dispatch(fetchTasks(id));
+      }
     });
   };
 }
@@ -148,87 +146,80 @@ export function reportTask(id, name, info, status) {
   };
 }
 
-function taskFeedback(flowId) {
-  // Polled in the background, the tasks show their own status
-  return action(
-    urlBuilder.taskFeedback({ flowId }),
-    "GET",
-    {},
-    undefined,
-    BACKGROUND
-  )
-    .then((response) => _flatten(response.data, true))
-    .catch((response) => _flatten(response.data, true));
+async function taskFeedback(flowId) {
+  // Polled in the background, the tasks show their own status (in the
+  // response of an error too)
+  const url = urlBuilder.taskFeedback({ flowId });
+  const response = await action(url, "GET", {}, undefined, BACKGROUND).catch(
+    (error) => error
+  );
+  return _flatten(response.data, true);
 }
 
 /** Status of the tasks of the video workflow. */
 export function fetchTasks(id) {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     const deposit = getState().deposits[id];
     const flowId =
       deposit && _get(findMasterFile(deposit.record), "tags.flow_id");
-    if (!flowId) {
-      return Promise.resolve();
+    if (!flowId) return;
+    const data = await taskFeedback(flowId);
+    const current = getState().deposits[id];
+    if (!current) return;
+    const tasksById = _mapValues(_groupBy(data, "id"), (tasks) => tasks[0]);
+    // A task changed: the files and states of the server are newer
+    const cached = _isEmpty(current.tasksById) ? tasksById : current.tasksById;
+    const changed = Object.keys(tasksById).some(
+      (taskId) =>
+        !cached[taskId] || cached[taskId].status !== tasksById[taskId].status
+    );
+    dispatch(
+      patchDeposit(id, {
+        tasksById: _cloneDeep(tasksById),
+        tasksByName: _groupBy(data, "name"),
+      })
+    );
+    if (changed) {
+      dispatch(refreshDeposits());
     }
-    return taskFeedback(flowId).then((data) => {
-      const current = getState().deposits[id];
-      if (!current) return;
-      const tasksById = _mapValues(_groupBy(data, "id"), (tasks) => tasks[0]);
-      // A task changed: the files and states of the server are newer
-      const cached = _isEmpty(current.tasksById)
-        ? tasksById
-        : current.tasksById;
-      const changed = Object.keys(tasksById).some(
-        (taskId) =>
-          !cached[taskId] || cached[taskId].status !== tasksById[taskId].status
-      );
-      dispatch(
-        patchDeposit(id, {
-          tasksById: _cloneDeep(tasksById),
-          tasksByName: _groupBy(data, "name"),
-        })
-      );
-      if (changed) {
-        dispatch(refreshDeposits());
-      }
-      // The subformats of the master file show the transcoding status
-      const subformat = transcodingSubformats(data);
-      dispatch({
-        type: ActionTypes.FILES_CHANGED,
-        id,
-        update: (files) =>
-          files.map((file) =>
-            file.context_type === "master" ? { ...file, subformat } : file
-          ),
-      });
-      (data || []).forEach((task) =>
-        dispatch(reportTask(id, task.name, task.info, task.status))
-      );
+    // The subformats of the master file show the transcoding status
+    const subformat = transcodingSubformats(data);
+    dispatch({
+      type: ActionTypes.FILES_CHANGED,
+      id,
+      update: (files) =>
+        files.map((file) =>
+          file.context_type === "master" ? { ...file, subformat } : file
+        ),
     });
+    (data || []).forEach((task) =>
+      dispatch(reportTask(id, task.name, task.info, task.status))
+    );
   };
 }
 
 export function restartFlow(id) {
-  return (dispatch, getState) => {
+  return async (dispatch, getState) => {
     const flowId = _get(
       findMasterFile(getState().deposits[id].record),
       "tags.flow_id"
     );
-    action(urlBuilder.restartFlow({ flowId }), "PUT").then(
-      () => {
-        toaster.pop({ type: "info", title: "Flow has been restarted!" });
-        dispatch(fetchTasks(id));
-      },
-      () => toaster.pop({ type: "error", title: "Flow cannot be restarted!" })
-    );
+    try {
+      await action(urlBuilder.restartFlow({ flowId }), "PUT");
+    } catch {
+      toaster.pop({ type: "error", title: "Flow cannot be restarted!" });
+      return;
+    }
+    toaster.pop({ type: "info", title: "Flow has been restarted!" });
+    dispatch(fetchTasks(id));
   };
 }
 
 export function restartTask(id, flowId, taskId) {
-  return (dispatch) =>
-    action(urlBuilder.restartTask({ taskId, flowId }), "PUT").then(() =>
-      dispatch(fetchTasks(id))
-    );
+  return async (dispatch) => {
+    await action(urlBuilder.restartTask({ taskId, flowId }), "PUT");
+    return dispatch(fetchTasks(id));
+  };
 }
 
 /**

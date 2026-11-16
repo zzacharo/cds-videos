@@ -32,37 +32,37 @@ const ANNOUNCEMENT_STYLES = {
 };
 
 /** Load and show any announcement message for the current page. */
-export function toggleAnnouncement() {
+export async function toggleAnnouncement() {
   const element = document.getElementById("announcement");
   if (!element) return;
-  http
-    .get("/api/announcement", {
+  try {
+    const response = await http.get("/api/announcement", {
       params: { pathname: window.location.pathname },
       ignoreLoadingBar: true,
-    })
-    .then((response) => {
-      const result = response.data;
-      if (result && result.message) {
-        const style = ANNOUNCEMENT_STYLES[result.style];
-        element.className = [
-          "ui",
-          style === undefined ? result.style : style,
-          "message",
-          "cds-announcement",
-          "text-center",
-          "alert-" + result.style,
-        ]
-          .filter(Boolean)
-          .join(" ");
-        element.innerHTML = result.message;
-        // Fix the margin of the deposit view
-        const deposit = document.getElementById("cds-deposit");
-        if (deposit) deposit.classList.add("fix-margin-top");
-      } else {
-        element.classList.add("hidden");
-      }
-    })
-    .catch(() => {});
+    });
+    const result = response.data;
+    if (result && result.message) {
+      const style = ANNOUNCEMENT_STYLES[result.style];
+      element.className = [
+        "ui",
+        style === undefined ? result.style : style,
+        "message",
+        "cds-announcement",
+        "text-center",
+        "alert-" + result.style,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      element.innerHTML = result.message;
+      // Fix the margin of the deposit view
+      const deposit = document.getElementById("cds-deposit");
+      if (deposit) deposit.classList.add("fix-margin-top");
+    } else {
+      element.classList.add("hidden");
+    }
+  } catch {
+    // No announcement
+  }
 }
 
 /** Mount the header search bar with suggestions (not on the search page). */
