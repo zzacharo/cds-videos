@@ -13,7 +13,7 @@ import PropTypes from "prop-types";
 
 /**
  * Dialog with a title and a close button, rendered in place with the markup
- * and the styles of the former ``modal-dialog`` (ngModal) directive.
+ * and the ``ng-modal`` styles of the previous interface.
  * ``buttons`` are ``[label, color, onClick]``: each one also closes it.
  */
 export function DialogModal({

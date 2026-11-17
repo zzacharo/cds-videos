@@ -49,3 +49,8 @@ export const ISO_LANGUAGES = {
   uk: "Ukrainian",
   ur: "Urdu",
 };
+
+/** Translate ISO languages to language names (i.e. en -> English). */
+export function isoToLanguage(code) {
+  return ISO_LANGUAGES[code] || code;
+}

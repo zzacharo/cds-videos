@@ -8,20 +8,13 @@
  * option) any later version.
  */
 
-/* The project (types/project/form.html and types/project/actions.html). */
+/* The project: its actions and its form. */
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import { EditorsField, RestrictionsBox } from "../fields/Access";
 import { CategoryField, TypeField } from "../fields/CategoryType";
-import {
-  ContributorsField,
-  KeywordsField,
-  LicensesField,
-  RichTextField,
-  TextField,
-} from "../fields/Fields";
 import {
   CONTRIBUTOR_ROLES,
   PROJECT_EDITOR_TOOLBAR,
@@ -37,10 +30,18 @@ import {
 } from "../state/hooks";
 import { isPublished } from "../state/records";
 import { isInvalid } from "../state/selectors";
-import { ErrorAlerts, Html, InfoDialog, Tabs } from "../components/common";
 import { urlBuilder } from "../constants";
 import { DepositForm } from "../fields/DepositForm";
-import { ProjectUploader } from "../uploads/Uploaders";
+import { Tabs } from "../components/Tabs";
+import { ErrorAlerts } from "../components/ErrorAlerts";
+import { SanitizedHtml } from "../components/SanitizedHtml";
+import { InfoDialog } from "../components/InfoDialog";
+import { ProjectUploader } from "../uploads/ProjectUploader";
+import { TextField } from "../fields/BasicFields";
+import { RichTextField } from "../fields/RichTextField";
+import { KeywordsField } from "../fields/KeywordsField";
+import { ContributorsField } from "../fields/ContributorsField";
+import { LicensesField } from "../fields/LicensesField";
 
 function ProjectActions({ id }) {
   const deposit = useDeposit(id);
@@ -213,7 +214,7 @@ export function ProjectPanel({ id }) {
                   {(record.title && record.title.title) || "No video title"}
                 </a>
               </h3>
-              <Html
+              <SanitizedHtml
                 className="f6"
                 html={record.description || "No description"}
               />

@@ -11,10 +11,11 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import { SearchLoading, SearchResults } from "./components";
-import { SearchApp } from "./SearchApp";
+import { SearchApp } from "../SearchApp";
 import { VIDEO_PLACEHOLDERS } from "./Placeholders";
 import { VIDEO_TEMPLATES } from "./VideoTemplates";
+import { SearchLoading } from "./SearchStatus";
+import { SearchResults } from "./SearchResults";
 
 /**
  * A search that is not reflected in the URL, used by the home page sections

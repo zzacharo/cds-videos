@@ -9,9 +9,8 @@
  */
 
 /*
- * File selection by click or drag and drop (replaces ``ng-file-upload``
- * ``ngf-select`` and ``ngf-drop`` with ``ngf-pattern``, ``ngf-max-size`` and
- * ``ngf-validate-fn``).
+ * File selection by click or drag and drop, filtered by a file pattern, a
+ * maximum size and a validation function.
  */
 
 import React, { useRef, useState } from "react";

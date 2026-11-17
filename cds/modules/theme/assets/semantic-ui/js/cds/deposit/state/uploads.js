@@ -9,7 +9,7 @@
  */
 
 /*
- * File uploads of the deposits (the former ``cdsUploader`` component).
+ * File uploads of the deposits.
  *
  * A local file is shown in ``_files`` as ``{key, size, type, local, ...}``
  * with its upload progress. The ``File`` itself waits in the upload queue
@@ -20,7 +20,7 @@ import _merge from "lodash/merge";
 
 import { getCookie, http } from "@js/cds/shared/api";
 import { toaster } from "@js/cds/shared/components/Toaster";
-import { ISO_LANGUAGES } from "@js/cds/shared/isoLanguages";
+import { ISO_LANGUAGES } from "@js/cds/shared/utils/languages";
 
 import { FLOWS_RECEIVER, urlBuilder } from "../constants";
 import { patchDeposit } from "./deposit";

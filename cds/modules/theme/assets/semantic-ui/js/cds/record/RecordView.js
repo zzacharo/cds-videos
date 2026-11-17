@@ -8,7 +8,7 @@
  * option) any later version.
  */
 
-/* ``cds-record-view`` directive and ``cdsRecordCtrl`` controller. */
+/* The record page: loads the record and renders the video or project view. */
 
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";

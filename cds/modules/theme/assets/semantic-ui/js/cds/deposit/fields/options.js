@@ -8,7 +8,7 @@
  * option) any later version.
  */
 
-/* Options of the deposit forms (from the former JSON form definitions). */
+/* Options of the deposit forms. */
 
 export const CONTRIBUTOR_ROLES = [
   {

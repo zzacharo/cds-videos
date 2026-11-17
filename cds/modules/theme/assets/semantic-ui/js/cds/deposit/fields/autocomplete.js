@@ -8,10 +8,11 @@
  * option) any later version.
  */
 
-/* Remote suggestions of the deposit forms (from the former ``cdsForm``). */
+/* Remote suggestions of the deposit forms. */
 
 import _capitalize from "lodash/capitalize";
 import _findIndex from "lodash/findIndex";
+import _get from "lodash/get";
 
 import { http } from "@js/cds/shared/api";
 
@@ -171,4 +172,12 @@ export async function autocompleteAccess(query) {
       isUserInput: false,
     }))
   );
+}
+
+/** Display value of an autocomplete item (``parseAutocomplete``). */
+export function parseAutocomplete(input, key) {
+  if (input !== null && typeof input === "object") {
+    return _get(input, key || "name");
+  }
+  return input;
 }

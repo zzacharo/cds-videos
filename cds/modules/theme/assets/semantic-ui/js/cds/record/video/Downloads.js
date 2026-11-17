@@ -8,27 +8,28 @@
  * option) any later version.
  */
 
-/* static/templates/cds_records/video/downloads.html */
+/* Downloads of a video: its formats, thumbnails and other files. */
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import { Popover } from "@js/cds/shared/components/Popups";
+import { get, groupBy } from "@js/cds/shared/utils/collections";
 import {
-  bytesToHumanReadable,
-  download,
   findFrames,
   findMaster,
   findResolution,
-  get,
   getAllFilesExcept,
   getFilesByType,
-  groupBy,
   groupDownloadable,
-  isoToLanguage,
-  middleEllipsis,
   sortVideosDescending,
-} from "@js/cds/shared/utils";
+} from "@js/cds/shared/utils/records";
+import {
+  bytesToHumanReadable,
+  middleEllipsis,
+} from "@js/cds/shared/utils/text";
+import { download } from "@js/cds/shared/utils/urls";
+import { isoToLanguage } from "@js/cds/shared/utils/languages";
 
 const BIG_FILE_WARNING =
   "<strong>Warning: Big file!</strong><br>As no network or browser is 100% stable, we <em>strongly</em> recommend using a download manager.";

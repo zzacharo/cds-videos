@@ -12,7 +12,7 @@ import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 
 /*
- * Toast notifications (replaces angularjs-toaster).
+ * Toast notifications.
  *
  * Usage: ``toaster.pop({type, title, body})`` or
  * ``toaster.pop(type, title, body)``. ``body`` may contain trusted HTML.

@@ -9,19 +9,18 @@
  */
 
 /*
- * Result templates of the video searches (theme/static/templates/cds/video).
+ * Templates rendering the results of video searches: home page sections,
+ * related videos and the search page.
  */
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-import {
-  ellipsis,
-  findMaster,
-  getImagePreview,
-  previewIframeSrc,
-} from "@js/cds/shared/utils";
 import { ProgressiveImage } from "@js/cds/shared/components/ProgressiveImage";
+import { findMaster } from "@js/cds/shared/utils/records";
+import { getImagePreview } from "@js/cds/shared/utils/images";
+import { ellipsis } from "@js/cds/shared/utils/text";
+import { previewIframeSrc } from "@js/cds/shared/utils/urls";
 
 function hitsOf(results) {
   return (results && results.hits && results.hits.hits) || [];
@@ -31,7 +30,7 @@ function title(record, length) {
   return ellipsis(record.metadata.title.title || "No title", length);
 }
 
-/** featured.html: player of the featured video. */
+/** Player of the featured video. */
 export function FeaturedVideo({ results }) {
   return (
     <div className="bg-b">
@@ -56,7 +55,7 @@ export function FeaturedVideo({ results }) {
 
 FeaturedVideo.propTypes = { results: PropTypes.object.isRequired };
 
-/** featured-medium.html: most recent videos on the home page. */
+/** Most recent videos on the home page. */
 export function FeaturedMediumGrid({ results }) {
   return (
     <div className="cds-row cds-search-results">
@@ -103,7 +102,7 @@ function FeaturedMediumItem({ record }) {
 
 FeaturedMediumItem.propTypes = { record: PropTypes.object.isRequired };
 
-/** medium.html: related videos. */
+/** Related videos. */
 export function MediumGrid({ results }) {
   return (
     <div className="cds-row cds-search-results">
@@ -144,7 +143,7 @@ function MediumItem({ record }) {
 
 MediumItem.propTypes = { record: PropTypes.object.isRequired };
 
-/** small.html: search results. */
+/** Search results. */
 export function SmallGrid({ results }) {
   return (
     <div className="cds-row cds-search-results">
@@ -178,7 +177,7 @@ export function SmallGrid({ results }) {
 
 SmallGrid.propTypes = { results: PropTypes.object.isRequired };
 
-/** small_video_card.html: home page sections. */
+/** Video cards of the home page sections. */
 export function SmallVideoCardGrid({ results }) {
   return (
     <div className="cds-row cds-search-results">

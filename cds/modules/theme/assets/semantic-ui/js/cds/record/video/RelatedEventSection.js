@@ -8,14 +8,14 @@
  * option) any later version.
  */
 
-/* static/templates/cds_records/video/related_event_section.html */
+/* The event a video belongs to, with the other videos of the event. */
 
 import React from "react";
 import PropTypes from "prop-types";
 
-import { SearchWidget } from "@js/cds/search/SearchWidget";
+import { SearchWidget } from "@js/cds/search/components/SearchWidget";
 import { useSearch } from "@js/cds/search/hooks";
-import { angularFilterBy, get } from "@js/cds/shared/utils";
+import { filterByFields, get } from "@js/cds/shared/utils/collections";
 
 function Header({ identifier = undefined }) {
   const [state] = useSearch();
@@ -45,7 +45,7 @@ Header.propTypes = { identifier: PropTypes.string };
 
 export function RelatedEventSection({ record, relatedQueryUrl = "" }) {
   const indicoIdentifier =
-    angularFilterBy(get(record, "metadata.related_identifiers"), {
+    filterByFields(get(record, "metadata.related_identifiers"), {
       scheme: "indico",
     })[0] || {};
   const endpoint = (relatedQueryUrl || "").replace(

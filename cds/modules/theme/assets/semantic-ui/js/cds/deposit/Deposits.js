@@ -8,7 +8,7 @@
  * option) any later version.
  */
 
-/* The deposit page: a project and its videos (``deposits.html``). */
+/* The deposit page: a project and its videos. */
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
@@ -30,7 +30,7 @@ import { DepositFormPlaceholder } from "./DepositFormPlaceholder";
 import { DropZone } from "./uploads/DropZone";
 import { ProjectPanel } from "./project/ProjectPanel";
 import { VideoPanel } from "./video/VideoPanel";
-import { TaskList } from "./components/common";
+import { TaskList } from "./components/TaskList";
 
 function Project({ id }) {
   useStarted(startDeposit, id);

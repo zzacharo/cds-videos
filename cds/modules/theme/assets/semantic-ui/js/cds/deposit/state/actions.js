@@ -9,8 +9,7 @@
  */
 
 /*
- * Actions of the deposits on the server: save, publish, edit and delete
- * (the former ``cdsActions`` component).
+ * Actions of the deposits on the server: save, publish, edit and delete.
  *
  * The requests run one after the other, in the order of the clicks, and
  * each one sends the record as it is when it starts. Two saves can not

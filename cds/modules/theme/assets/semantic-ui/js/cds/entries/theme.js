@@ -18,52 +18,11 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 
-import { http } from "@js/cds/shared/api";
-import { onReady } from "@js/cds/shared/dom";
+import { onReady, initDismissibleAlerts } from "@js/cds/shared/dom";
 import { SearchBarSuggestions } from "@js/cds/header/SearchBarSuggestions";
-import { SearchWidget } from "@js/cds/search/SearchWidget";
-
-const ANNOUNCEMENT_STYLES = {
-  default: "",
-  success: "positive",
-  info: "info",
-  warning: "warning",
-  danger: "negative",
-};
-
-/** Load and show any announcement message for the current page. */
-export async function toggleAnnouncement() {
-  const element = document.getElementById("announcement");
-  if (!element) return;
-  try {
-    const response = await http.get("/api/announcement", {
-      params: { pathname: window.location.pathname },
-      ignoreLoadingBar: true,
-    });
-    const result = response.data;
-    if (result && result.message) {
-      const style = ANNOUNCEMENT_STYLES[result.style];
-      element.className = [
-        "ui",
-        style === undefined ? result.style : style,
-        "message",
-        "cds-announcement",
-        "text-center",
-        "alert-" + result.style,
-      ]
-        .filter(Boolean)
-        .join(" ");
-      element.innerHTML = result.message;
-      // Fix the margin of the deposit view
-      const deposit = document.getElementById("cds-deposit");
-      if (deposit) deposit.classList.add("fix-margin-top");
-    } else {
-      element.classList.add("hidden");
-    }
-  } catch {
-    // No announcement
-  }
-}
+import { SearchWidget } from "@js/cds/search/components/SearchWidget";
+import { toggleAnnouncement } from "@js/cds/header/announcement";
+import { initPlainSearchForm, initNavbarToggle } from "@js/cds/header/navbar";
 
 /** Mount the header search bar with suggestions (not on the search page). */
 function mountSearchBar() {
@@ -90,48 +49,6 @@ function mountSearchWidgets() {
         centeredLoading={data.centeredLoading !== "false"}
       />
     );
-  });
-}
-
-/** Style of the plain header search form (pages without suggestions). */
-function initPlainSearchForm() {
-  const element = document.getElementById("cds-navbar-search");
-  if (!element || element.dataset.mode !== "plain") return;
-  const input = document.getElementById("cds-navbar-form-input");
-  if (!input) return;
-  const form = input.closest(".cds-navbar-form");
-  input.addEventListener("focus", () =>
-    form.classList.add("cds-active-search")
-  );
-  input.addEventListener("blur", () =>
-    form.classList.remove("cds-active-search")
-  );
-}
-
-/** Responsive navigation bar toggle. */
-function initNavbarToggle() {
-  document.querySelectorAll("[data-cds-navbar-toggle]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const target = document.querySelector(button.dataset.cdsNavbarToggle);
-      if (target) {
-        const open = target.classList.toggle("cds-navbar-collapse-open");
-        button.setAttribute("aria-expanded", open ? "true" : "false");
-      }
-    });
-  });
-}
-
-/** Dismissible alerts of the server rendered pages (``data-dismiss="alert"``). */
-function initDismissibleAlerts() {
-  document.addEventListener("click", (event) => {
-    const button =
-      event.target.closest && event.target.closest('[data-dismiss="alert"]');
-    if (button) {
-      const alert = button.closest(".cds-alert, .alert");
-      if (alert) {
-        alert.remove();
-      }
-    }
   });
 }
 

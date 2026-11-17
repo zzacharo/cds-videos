@@ -21,7 +21,7 @@ import { Dropdown } from "semantic-ui-react";
 import { setRecordValue } from "../state/deposit";
 import { changeCategoryOrType } from "../state/permissions";
 import { selectAnyVideoPublished } from "../state/selectors";
-import { useDepositField, useDepositForm, useReadonly } from "./Fields";
+import { useDepositField, useDepositForm, useReadonly } from "./formContext";
 
 const DESCRIPTIONS = {
   category: "Category of the project.",

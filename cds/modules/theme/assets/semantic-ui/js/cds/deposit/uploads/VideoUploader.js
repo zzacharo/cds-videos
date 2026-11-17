@@ -9,25 +9,18 @@
  */
 
 /*
- * Files of the deposits (static/templates/cds_deposit/types/common/
- * uploader.html and types/video/uploader.html).
+ * Files of a video: the uploaded video and its processing, subtitles and
+ * other files.
  */
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import clsx from "clsx";
-import _orderBy from "lodash/orderBy";
 
 import { DialogModal } from "@js/cds/shared/components/DialogModal";
 import { Tooltip } from "@js/cds/shared/components/Popups";
-import {
-  angularFilter,
-  bytesToHumanReadable,
-  findBy,
-  prevent,
-} from "@js/cds/shared/utils";
+import { filterByText, findBy } from "@js/cds/shared/utils/collections";
+import { prevent, show } from "@js/cds/shared/dom";
 
-import { toInt } from "../filters";
 import {
   useConfig,
   useDeposit,
@@ -42,439 +35,17 @@ import {
   validateSubtitles,
 } from "../state/uploads";
 import { DropZone } from "./DropZone";
-import { InfoDialog, TipsBox, show } from "../components/common";
-
-function limitTo(text, length) {
-  return (text || "").slice(0, length);
-}
-
-function FileName({ file, children = null }) {
-  return (
-    <td title={file.key}>
-      {limitTo(file.key, 40)}{" "}
-      <span style={show((file.key || "").length > 40)}>...</span>
-      {children}
-    </td>
-  );
-}
-
-FileName.propTypes = {
-  file: PropTypes.object.isRequired,
-  children: PropTypes.node,
-};
-
-const FILES_HEADER = (
-  <tr>
-    <th>Filename</th>
-    <th>Size</th>
-    <th className="text-center">Progress</th>
-    <th className="text-center">Actions</th>
-  </tr>
-);
-
-function SearchRow({ files, search, setSearch }) {
-  return (
-    <div className="cds-row">
-      <div className="cds-col-sm-6">
-        <p style={show(files.length > 0)} className="text-muted" />
-      </div>
-      <div className="cds-col-sm-12">
-        <div className="form-group">
-          <input
-            type="text"
-            className="cds-form-control input-sm"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-SearchRow.propTypes = {
-  files: PropTypes.array.isRequired,
-  search: PropTypes.string.isRequired,
-  setSearch: PropTypes.func.isRequired,
-};
-
-/** Drop zone content of the video uploads. */
-function UploadBox({ icon, title }) {
-  return (
-    <div className="pa-10 cds-deposit-box-upload-wrapper text-center">
-      <p className="cds-deposit-box-upload-icon mb-20">
-        <i className={`fa ${icon}`} aria-hidden="true" />
-      </p>
-      <div className="cds-deposit-box-upload-content">
-        <h4>{title}</h4>
-        <p className="cds-deposit-box-upload-description">
-          Or Drag &amp; Drop files
-        </p>
-      </div>
-    </div>
-  );
-}
-
-UploadBox.propTypes = {
-  icon: PropTypes.string.isRequired,
-  title: PropTypes.string.isRequired,
-};
-
-function FileSize({ file }) {
-  return (
-    <td>
-      {file.size !== undefined ? (
-        <span>{bytesToHumanReadable(file.size)}</span>
-      ) : (
-        <span>Unknown</span>
-      )}
-    </td>
-  );
-}
-
-FileSize.propTypes = { file: PropTypes.object.isRequired };
-
-function FileProgress({ file, done }) {
-  return (
-    <td className="text-center">
-      <span style={show(file.percentage < 100 && !file.status_failure)}>
-        {file.percentage} %
-      </span>
-      <span style={show(file.status_pending || file.status_started)}>
-        Processing...
-      </span>
-      <span style={show(file.status_failure)} className="text-danger">
-        Error
-      </span>
-      <span
-        style={show(
-          (file.status_completed || file.percentage === 100) &&
-            !file.status_failure
-        )}
-        className="text-success"
-      >
-        {done}
-      </span>
-    </td>
-  );
-}
-
-FileProgress.propTypes = {
-  file: PropTypes.object.isRequired,
-  done: PropTypes.string.isRequired,
-};
-
-function HowToUpdateDialog() {
-  return (
-    <InfoDialog
-      title="How to update the video file"
-      trigger={(open) => (
-        <a href="#info" onClick={prevent(open)}>
-          <i className="fa fa-info" />
-        </a>
-      )}
-    >
-      <p className="text-left">
-        To replace the video file, just upload another video file.
-      </p>
-    </InfoDialog>
-  );
-}
-
-function RemoveLink({ onRemove, file }) {
-  return (
-    <a href="#remove" onClick={prevent(() => onRemove(file.key))}>
-      <i className="fa fa-trash-o" />
-    </a>
-  );
-}
-
-RemoveLink.propTypes = {
-  onRemove: PropTypes.func.isRequired,
-  file: PropTypes.object.isRequired,
-};
-
-function ReplaceMasterDialog({ id, message }) {
-  const { newMasterName } = useDeposit(id);
-  const { closeNewMasterDialog } = useDepositActions(id);
-  return (
-    <DialogModal
-      open={newMasterName !== null}
-      onClose={() => closeNewMasterDialog(false)}
-      title="Replace master file"
-    >
-      <p>{message(newMasterName)}</p>
-      <hr className="mt-30 mb-10" />
-      <p className="pull-right">
-        <button
-          type="button"
-          className="ui basic button"
-          onClick={() => closeNewMasterDialog(false)}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="ui green button"
-          onClick={() => closeNewMasterDialog(true)}
-        >
-          Yes
-        </button>
-      </p>
-      <div className="cds-clearfix" />
-    </DialogModal>
-  );
-}
-
-ReplaceMasterDialog.propTypes = {
-  id: PropTypes.string.isRequired,
-  message: PropTypes.func.isRequired,
-};
-
-function SortHeader({ label, field, sort, setSort }) {
-  return (
-    <th>
-      <a
-        href="#sort"
-        onClick={prevent(() =>
-          setSort({ type: field, reverse: !sort.reverse })
-        )}
-      >
-        {label}{" "}
-        <span
-          style={show(sort.type === field && !sort.reverse)}
-          className="fa fa-caret-down"
-        />
-        <span
-          style={show(sort.type === field && sort.reverse)}
-          className="fa fa-caret-up"
-        />
-      </a>
-    </th>
-  );
-}
-
-SortHeader.propTypes = {
-  label: PropTypes.string.isRequired,
-  field: PropTypes.string.isRequired,
-  sort: PropTypes.object.isRequired,
-  setSort: PropTypes.func.isRequired,
-};
-
-function sortFiles(files, sort) {
-  if (!sort.type) {
-    return files;
-  }
-  return _orderBy(files, [sort.type], [sort.reverse ? "desc" : "asc"]);
-}
-
-/** Files of the project (``types/common/uploader.html``). */
-export function ProjectUploader({ id }) {
-  const { record } = useDeposit(id);
-  const actions = useDepositActions(id);
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState({ type: undefined, reverse: false });
-  const [showSubformats, setShowSubformats] = useState(false);
-  const [showFrames, setShowFrames] = useState(false);
-  const files = record._files || [];
-  const visible = angularFilter(sortFiles(files, sort), search);
-  const master = findMasterFile(record) || {};
-  const published = isPublished(record);
-  return (
-    <>
-      <ReplaceMasterDialog
-        id={id}
-        message={(name) =>
-          `Are you sure you want to replace the uploaded video with ${name}?`
-        }
-      />
-      <div className="cds-panel" style={show(files.length > 0)}>
-        <div className="cds-panel-heading">
-          <SearchRow files={files} search={search} setSearch={setSearch} />
-        </div>
-        <table className="cds-table">
-          <tbody>
-            <tr>
-              <SortHeader
-                label="Filename"
-                field="key"
-                sort={sort}
-                setSort={setSort}
-              />
-              <SortHeader
-                label="Size"
-                field="size"
-                sort={sort}
-                setSort={setSort}
-              />
-              <th className="text-center">Progress</th>
-              <th className="text-center">Actions</th>
-            </tr>
-            {visible.map((file, index) => (
-              <tr
-                // eslint-disable-next-line react/no-array-index-key
-                key={`${file.key}-${index}`}
-                className={clsx(
-                  "sel-file",
-                  file.context_type === "master" && "active"
-                )}
-              >
-                <FileName file={file} />
-                <FileSize file={file} />
-                <FileProgress file={file} done="✓" />
-                <td className="text-center">
-                  {!(
-                    file.context_type === "master" || file.percentage < 100
-                  ) && <RemoveLink onRemove={actions.removeFile} file={file} />}
-                  <span
-                    style={show(
-                      file.context_type === "master" || file.percentage < 100
-                    )}
-                  >
-                    <HowToUpdateDialog />
-                  </span>
-                </td>
-              </tr>
-            ))}
-            <tr style={show(visible.length === 0)}>
-              <td colSpan="4" className="text-center text-muted">
-                {" "}
-                No results.
-              </td>
-            </tr>
-            <tr
-              className="warning"
-              style={show((master.subformat || []).length > 0)}
-            >
-              <td>Extracted subformats</td>
-              <td />
-              <td className="text-center" />
-              <td className="text-center">
-                <a
-                  href="#subformats"
-                  onClick={prevent(() => setShowSubformats(!showSubformats))}
-                >
-                  {showSubformats ? <span>Hide</span> : <span>Show</span>}
-                </a>
-              </td>
-            </tr>
-            {(master.subformat || [])
-              .filter((f) => f.key)
-              .map((f) => (
-                <tr
-                  key={f.key}
-                  className="sel-file"
-                  style={show(showSubformats)}
-                >
-                  <FileName file={f} />
-                  <td />
-                  <td className="text-center">
-                    {f.percentage > 0 &&
-                      !f.status_completed &&
-                      !f.status_failure && <span>{toInt(f.percentage)} %</span>}
-                    {!f.percentage &&
-                      !f.status_completed &&
-                      !f.status_failure && (
-                        <span>
-                          <i className="fa fa-spinner fa-spin" />
-                        </span>
-                      )}
-                    <span
-                      style={show(f.status_failure)}
-                      className="text-danger"
-                    >
-                      Error
-                    </span>
-                    <span
-                      style={show(f.status_completed && !f.status_failure)}
-                      className="text-success"
-                    >
-                      ✓
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            <tr className="warning" style={show(master.frame)}>
-              <td>Extracted frames</td>
-              <td />
-              <td />
-              <td className="text-center">
-                <a
-                  href="#frames"
-                  onClick={prevent(() => setShowFrames(!showFrames))}
-                >
-                  {showFrames ? <span>Hide</span> : <span>Show</span>}
-                </a>
-              </td>
-            </tr>
-            <tr style={show(showFrames)}>
-              <td colSpan="4">
-                <div className="cds-row cds-deposit-thumbnail-pad">
-                  {(master.frame || []).map((frame) => (
-                    <div
-                      className="cds-deposit-frame-thumbnail"
-                      key={frame.key}
-                    >
-                      <a
-                        href={frame.links && frame.links.self}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {showFrames && (
-                          <img
-                            width="100%"
-                            alt=""
-                            src={thumbnailPreview(frame)}
-                          />
-                        )}
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <hr className="my-20" />
-      {!published && (
-        <div className="cds-deposit-box">
-          <DropZone multiple onFiles={actions.addFiles}>
-            <div className="pa-10 cds-deposit-box-upload-wrapper text-center">
-              <p className="cds-deposit-box-upload-icon mb-20">
-                <i className="fa fa-3x fa-files-o" aria-hidden="true" />
-              </p>
-              <div className="cds-deposit-box-upload-content">
-                <div className="cds-deposit-box-upload-title">
-                  <h4>Upload additional files for this project</h4>
-                </div>
-                <p className="cds-deposit-box-upload-description">
-                  {" "}
-                  Or Drag &amp; Drop files
-                </p>
-              </div>
-            </div>
-          </DropZone>
-          <hr className="my-10" />
-          <TipsBox>
-            <li>You can upload files related to the project.</li>
-          </TipsBox>
-        </div>
-      )}
-      {published && (
-        <TipsBox className="cds-deposit-box text-muted">
-          <li>
-            Click the <strong>Edit Project</strong> button on the bottom right
-            corner to add more files.
-          </li>
-        </TipsBox>
-      )}
-    </>
-  );
-}
-
-ProjectUploader.propTypes = { id: PropTypes.string.isRequired };
+import { TipsBox } from "../components/TipsBox";
+import {
+  FileName,
+  FILES_HEADER,
+  SearchRow,
+  UploadBox,
+  FileSize,
+  FileProgress,
+  RemoveLink,
+} from "./FileTable";
+import { HowToUpdateDialog, ReplaceMasterDialog } from "./UploadDialogs";
 
 function AddLink({
   onFiles,
@@ -507,7 +78,7 @@ AddLink.propTypes = {
   multiple: PropTypes.bool,
 };
 
-/** Files of a video (``types/video/uploader.html``). */
+/** Files of a video. */
 export function VideoUploader({ id }) {
   const { record } = useDeposit(id);
   const actions = useDepositActions(id);
@@ -526,7 +97,7 @@ export function VideoUploader({ id }) {
   const others = files.filter(
     (file) => !["poster", "master", "subtitle"].includes(file.context_type)
   );
-  const visibleOthers = angularFilter(others, search);
+  const visibleOthers = filterByText(others, search);
   const { addFiles } = actions;
 
   return (

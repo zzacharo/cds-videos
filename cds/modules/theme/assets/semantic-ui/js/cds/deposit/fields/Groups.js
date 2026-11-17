@@ -14,13 +14,6 @@ import React from "react";
 import PropTypes from "prop-types";
 
 import {
-  ArrayField,
-  Fieldset,
-  SelectField,
-  TextAreaField,
-  TextField,
-} from "./Fields";
-import {
   SCHEMA_DESCRIPTIONS,
   PROJECT_TRANSLATION_LANGUAGES,
   RELATED_IDENTIFIER_SCHEMES,
@@ -28,6 +21,9 @@ import {
   RESOURCE_TYPES,
   VIDEO_TRANSLATION_LANGUAGES,
 } from "./options";
+import { Fieldset } from "./Fieldset";
+import { SelectField, TextAreaField, TextField } from "./BasicFields";
+import { ArrayField } from "./ArrayField";
 
 /** Metadata translations. */
 export function TranslationsField({ project = false }) {

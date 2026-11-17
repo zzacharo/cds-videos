@@ -8,9 +8,8 @@
  * option) any later version.
  */
 
-/* Filters of the former ``cdsDeposit.filters`` module. */
+/* Order, state, color and icon of the processing tasks of a video. */
 
-import _get from "lodash/get";
 import _includes from "lodash/includes";
 import _omit from "lodash/omit";
 import _values from "lodash/values";
@@ -80,17 +79,4 @@ export function progressIcon(input) {
 
 export function taskRepr(input) {
   return TASK_REPRESENTATIONS[input] || input;
-}
-
-/** Display value of an autocomplete item (``parseAutocomplete``). */
-export function parseAutocomplete(input, key) {
-  if (input !== null && typeof input === "object") {
-    return _get(input, key || "name");
-  }
-  return input;
-}
-
-export function toInt(input) {
-  const result = parseInt(input, 10);
-  return isNaN(result) ? input : result;
 }

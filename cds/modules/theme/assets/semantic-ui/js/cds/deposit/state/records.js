@@ -159,7 +159,7 @@ export function applySchemaDefaults(record, type, showAvcRestrictedFields) {
   let result = record;
   if (type === "video") {
     const defaults = { language: "en", vr: false };
-    // The checkboxes of angular-schema-form defaulted to ``false``
+    // The checkboxes of the previous interface defaulted to ``false``
     if (showAvcRestrictedFields === true) {
       defaults.featured = false;
     }

@@ -19,10 +19,10 @@ import PropTypes from "prop-types";
 import { Formik, useFormikContext } from "formik";
 import { useDispatch, useSelector, useStore } from "react-redux";
 
-import { DepositFormContext } from "./Fields";
 import { validateProject, validateVideo } from "./validation";
 import { setFormErrors } from "../state/deposit";
 import { formValues } from "../state/records";
+import { DepositFormContext } from "./formContext";
 
 /** Run ``effect`` when ``counter`` changes, not when the form is created. */
 function useCounterEffect(counter, effect) {

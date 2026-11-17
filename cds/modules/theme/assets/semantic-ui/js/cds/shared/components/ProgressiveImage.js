@@ -11,7 +11,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 
-import { NOT_FOUND_IMAGE } from "../utils";
+import { NOT_FOUND_IMAGE } from "../utils/images";
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -24,7 +24,7 @@ function loadImage(src) {
 
 /**
  * Image blurred until loaded, which plays the gif animation of the video on
- * mouse over (``image-progressive-loading`` + ``err-src`` directives).
+ * mouse over, with a fallback image on error.
  */
 export function ProgressiveImage({
   imgSrc,
@@ -48,7 +48,7 @@ export function ProgressiveImage({
         }
       },
       () => {
-        // Same as the directive: the image stays blurred
+        // On error, the image stays blurred
       }
     );
     return () => {

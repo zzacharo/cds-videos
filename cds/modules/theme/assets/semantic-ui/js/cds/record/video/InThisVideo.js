@@ -10,21 +10,21 @@
 
 /*
  * "In this video" panel next to the player: chapters and transcripts, which
- * follow the playback (section of static/templates/cds_records/video/detail.html).
+ * follow the playback.
  */
 
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 
-import { isoToLanguage } from "@js/cds/shared/utils";
+import { isoToLanguage } from "@js/cds/shared/utils/languages";
 
 import {
-  cleanHtmlFromTitle,
   convertToMinutesSeconds,
   getPlayer,
   scrollActiveIntoList,
   seekTo,
-} from "../helpers";
+} from "./playback";
+import { cleanHtmlFromTitle } from "./metadata";
 
 /**
  * Active transcript line and chapter, updated every 100ms from the player

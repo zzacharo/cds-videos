@@ -8,15 +8,16 @@
  * option) any later version.
  */
 
-/* static/templates/cds_records/video/share.html */
+/* Share and embed links of a video. */
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import { CopyButton } from "@js/cds/shared/components/CopyButton";
-import { assembleShareURL, get, previewIframe } from "@js/cds/shared/utils";
+import { get } from "@js/cds/shared/utils/collections";
+import { assembleShareURL, previewIframe } from "@js/cds/shared/utils/urls";
 
-import { convertToMinutesSeconds, getPlayer, parseHMS } from "../helpers";
+import { convertToMinutesSeconds, getPlayer, parseHMS } from "./playback";
 
 function currentPageLink() {
   return window.location.href.split("?")[0];
@@ -100,7 +101,7 @@ export function Share({ record }) {
   const onChangeStart = (event) => {
     const value = event.target.value;
     setStartInput(value);
-    // ``ng-pattern``: an invalid value leaves the model undefined
+    // An invalid start time counts as none
     setLink(shareLink(withStart, /^[0-9:]*$/.test(value) ? value : undefined));
   };
 

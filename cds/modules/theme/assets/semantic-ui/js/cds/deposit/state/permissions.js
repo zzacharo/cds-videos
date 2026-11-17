@@ -9,7 +9,7 @@
  */
 
 /*
- * Access of the deposits (``cdsForm``): the category of the project gives
+ * Access of the deposits: the category of the project gives
  * who can edit, and who can read when restricted. The videos follow the
  * project.
  */

@@ -10,8 +10,8 @@
 
 /*
  * Validation of the deposit forms: the required fields of the JSON schemas
- * and of the former form definitions, with the messages of
- * angular-schema-form.
+ * and of the form definitions, with the same messages as the previous
+ * interface.
  */
 
 import { setIn } from "formik";

@@ -13,8 +13,7 @@
  *
  * The page is rendered by Jinja with placeholders
  * (``[data-cds-search-component]``) which are mounted here as React roots
- * sharing one search store, as the ``invenio-search`` directives shared the
- * ``invenioSearch`` controller before.
+ * sharing one search store.
  */
 
 import { onReady } from "@js/cds/shared/dom";

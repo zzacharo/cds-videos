@@ -9,8 +9,8 @@
  */
 
 /*
- * Selects with remote suggestions (the former ``ui-select`` widgets of the
- * deposit forms), built on the Semantic UI dropdown.
+ * Selects with remote suggestions for the deposit forms, built on the
+ * Semantic UI dropdown.
  */
 
 import React, { useEffect, useRef, useState } from "react";

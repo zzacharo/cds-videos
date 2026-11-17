@@ -57,7 +57,7 @@ export function forgetDeposit(id) {
   fields.delete(id);
 }
 
-/* Local storage of a deposit (``angular-local-storage``, ``cdsDeposit``) */
+/* Local storage of a deposit (same keys as the previous interface) */
 
 const STORAGE_PREFIX = "cdsDeposit";
 

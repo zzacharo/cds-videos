@@ -28,8 +28,7 @@ export function getCookie(cname) {
 }
 
 /*
- * Requests in flight, used by the loading bar (the former
- * angular-loading-bar listened to all the $http requests of the page).
+ * Requests in flight, used by the loading bar.
  */
 const listeners = new Set();
 let pending = 0;
@@ -105,8 +104,8 @@ export const http = setupInterceptors(
 );
 
 /**
- * ``localStorage`` helpers compatible with angular-local-storage, so that
- * the values stored by the previous interface are still found.
+ * ``localStorage`` helpers with the keys of the previous interface, so that
+ * the values it stored are still found.
  */
 export const storage = {
   key(prefix, key) {

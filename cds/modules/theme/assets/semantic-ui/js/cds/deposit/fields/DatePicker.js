@@ -9,8 +9,8 @@
  */
 
 /*
- * Text input with a calendar popup, like the former angular-strap
- * ``bs-datepicker`` (``yyyy-MM-dd`` strings, closes on selection).
+ * Text input with a calendar popup (``yyyy-MM-dd`` strings, closes on
+ * selection).
  */
 
 import React, { useEffect, useRef, useState } from "react";

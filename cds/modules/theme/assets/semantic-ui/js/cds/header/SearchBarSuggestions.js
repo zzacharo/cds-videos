@@ -17,7 +17,7 @@ import _isEmpty from "lodash/isEmpty";
 import { http, storage } from "@js/cds/shared/api";
 import { useStoreState } from "@js/cds/search/hooks";
 
-/* Same storage key as angular-local-storage (prefix ``ls``) used before. */
+/* Same storage key as the previous interface (prefix ``ls``). */
 const HISTORY_PREFIX = "ls";
 const HISTORY_KEY = "cds.search.history";
 const HISTORY_ICON = '<i class="fa fa-history text-primary pr-5"></i> ';
@@ -63,7 +63,7 @@ export function addToHistory(selected) {
 }
 
 function SuggestionLabel({ label = "" }) {
-  // ``ng-bind-html`` of the label (the history entries carry their icon)
+  // The label is HTML (the history entries carry their icon)
   return (
     <span
       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(label || "") }}
@@ -74,9 +74,8 @@ function SuggestionLabel({ label = "" }) {
 SuggestionLabel.propTypes = { label: PropTypes.string };
 
 /**
- * Header search bar with suggestions (``mass-autocomplete`` with the
- * ``cdsSuggest`` app, or ``invenio-search-bar-suggestions`` on the search
- * page, when a search ``store`` is given).
+ * Header search bar with suggestions. On the search page it is wired to
+ * the search when a search ``store`` is given.
  */
 export function SearchBarSuggestions({
   action = "/search",
@@ -175,7 +174,7 @@ export function SearchBarSuggestions({
     const newValue = event.target.value;
     setValue(newValue);
     if (inSearch) {
-      // ``ng-model-options="{debounce: 500}"`` on the search page
+      // Debounced by 500 ms on the search page
       clearTimeout(timers.current.model);
       timers.current.model = setTimeout(
         () => store.setUserQuery(newValue),

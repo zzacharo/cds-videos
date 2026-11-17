@@ -9,7 +9,7 @@
  */
 
 /*
- * The deposit page (the former ``cdsDeposits`` component): the project and
+ * Setup of the deposit page: the project and
  * its videos, created from the video files of a new upload.
  */
 

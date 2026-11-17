@@ -9,8 +9,7 @@
  */
 
 /*
- * The list of the deposits (cds_deposit/index.html): search bar
- * (invenio_deposit/searchbar.html) and results (cds_deposit/search/results.html).
+ * The list of uploads: its search bar and results.
  */
 
 import React, { useEffect, useState } from "react";
@@ -18,7 +17,8 @@ import PropTypes from "prop-types";
 import { Placeholder } from "semantic-ui-react";
 
 import { useSearch } from "@js/cds/search/hooks";
-import { formatDate, wordsSplit } from "@js/cds/shared/utils";
+import { wordsSplit } from "@js/cds/shared/utils/text";
+import { formatDate } from "@js/cds/shared/utils/dates";
 
 import {
   orderTasks,
@@ -26,9 +26,9 @@ import {
   progressClass,
   progressIcon,
   taskRepr,
-} from "../filters";
+} from "../taskStatus";
 
-/** Search bar of the deposits (``invenio_deposit/searchbar.html``). */
+/** Search bar of the list of uploads. */
 export function DepositSearchBar({ placeholder = "" }) {
   const [state, store] = useSearch();
   const query = state.currentParams.q || "";
@@ -220,7 +220,7 @@ GetStarted.propTypes = {
   wrapped: PropTypes.bool.isRequired,
 };
 
-/** Results of the deposit list (``cds_deposit/search/results.html``). */
+/** Results of the list of uploads. */
 export function DepositResults() {
   const [state] = useSearch();
   const results = state.results;

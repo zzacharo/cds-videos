@@ -8,16 +8,20 @@
  * option) any later version.
  */
 
-/* static/templates/cds_records/project/detail.html */
+/* The project page: its metadata and its videos. */
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import DOMPurify from "dompurify";
 
 import { CopyButton } from "@js/cds/shared/components/CopyButton";
-import { ellipsis, get, iiif, NOT_FOUND_IMAGE } from "@js/cds/shared/utils";
+import { get } from "@js/cds/shared/utils/collections";
+import { iiif, NOT_FOUND_IMAGE } from "@js/cds/shared/utils/images";
+import { ellipsis } from "@js/cds/shared/utils/text";
 
-import { DoiBadge, Html, Keywords, ReportNumberBadge } from "../common";
+import { DoiBadge, ReportNumberBadge } from "../components/Badges";
+import { Keywords } from "../components/Keywords";
+import { TrustedHtml } from "../components/TrustedHtml";
 
 function VideoItem({ video }) {
   const [gif, setGif] = useState(false);
@@ -114,7 +118,7 @@ export function ProjectDetail({ record }) {
               {/* Description */}
               <hr />
               <div className="cds-detail-description cds-detail-video-description t-b">
-                <Html
+                <TrustedHtml
                   as="p"
                   className="f7 mb-20"
                   html={

@@ -9,8 +9,7 @@
  */
 
 /*
- * REST API of the deposit (the former ``cdsAPI`` factory and
- * ``depositActions`` provider).
+ * Requests to the REST API of the deposits.
  */
 
 import _cloneDeep from "lodash/cloneDeep";

@@ -8,12 +8,12 @@
  * option) any later version.
  */
 
-/* static/templates/cds_records/video/technical_metadata.html */
+/* Technical metadata of a video. */
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-import { findMaster } from "@js/cds/shared/utils";
+import { findMaster } from "@js/cds/shared/utils/records";
 
 export function TechnicalMetadata({ record }) {
   const [technicalExpand, setTechnicalExpand] = useState(false);

@@ -8,357 +8,49 @@
  * option) any later version.
  */
 
-/* static/templates/cds_records/video/detail.html */
+/* The video page: player, metadata, chapters, downloads and sharing. */
 
 import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
-import DOMPurify from "dompurify";
-import { Placeholder } from "semantic-ui-react";
 
-import { DialogModal } from "@js/cds/shared/components/DialogModal";
 import { Tooltip } from "@js/cds/shared/components/Popups";
 import {
-  absoluteURL,
-  angularFilterBy,
-  findMaster,
-  formatDate,
-  formatRelationResourceType,
+  filterByFields,
   get,
-  getVttSubtitles,
   groupBy,
   isEmpty,
-  isoToLanguage,
+} from "@js/cds/shared/utils/collections";
+import {
+  findMaster,
+  getVttSubtitles,
   isPublic,
-  previewIframeSrc,
-  replace,
-} from "@js/cds/shared/utils";
+} from "@js/cds/shared/utils/records";
+import { formatRelationResourceType, replace } from "@js/cds/shared/utils/text";
+import { formatDate } from "@js/cds/shared/utils/dates";
+import { absoluteURL, previewIframeSrc } from "@js/cds/shared/utils/urls";
+import { isoToLanguage } from "@js/cds/shared/utils/languages";
 
-import { DoiBadge, Html, Keywords, ReportNumberBadge } from "../common";
 import {
   buildChapterFrames,
-  cleanHtmlFromTitle,
   filterTranscript,
   parseVttFromUrl,
-  prepareDescriptions,
-  prepareRelatedIdentifiers,
   scrollToElement,
   seekTo,
-} from "../helpers";
+} from "./playback";
 import { Downloads } from "./Downloads";
 import { InThisVideo, usePlayerHighlights } from "./InThisVideo";
 import { RelatedEventSection } from "./RelatedEventSection";
 import { Share } from "./Share";
 import { TechnicalMetadata } from "./TechnicalMetadata";
-
-const UNKNOWN_LICENSE_TEXT =
-  "This resource is copyrighted as non-CERN and unfortunately we don't have enough information about its licence. None of CERN's terms of use will apply. Please contact the copyright holder directly for more information.";
-
-/** Trusted HTML of the record, sanitized. */
-function sanitize(html) {
-  return DOMPurify.sanitize(html || "", { ADD_ATTR: ["target"] });
-}
-
-function UnknownLicense({ label, title }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <a
-        href="#licence"
-        onClick={(e) => {
-          e.preventDefault();
-          setOpen(true);
-        }}
-      >
-        {label}
-      </a>
-      <DialogModal open={open} onClose={() => setOpen(false)} title={title}>
-        <div>
-          <p>{UNKNOWN_LICENSE_TEXT}</p>
-        </div>
-      </DialogModal>
-    </>
-  );
-}
-
-UnknownLicense.propTypes = {
-  label: PropTypes.string.isRequired,
-  title: PropTypes.string.isRequired,
-};
-
-/** Licence of the video in the date bar (``material == 'other'``). */
-function OtherLicense({ licenses }) {
-  const license = licenses[0].license;
-  let content;
-  if (!license) {
-    content = <UnknownLicense label="Unknown" title="Unknown" />;
-  } else if (license === "CERN") {
-    content = (
-      <a target="_blank" rel="noreferrer" href="http://copyright.web.cern.ch/">
-        Conditions of Use
-      </a>
-    );
-  } else if (license === "unknown") {
-    content = (
-      <UnknownLicense label="Unknown Licence" title="Unknown Licence" />
-    );
-  } else if (licenses[0].url) {
-    content = (
-      <a target="_blank" rel="noreferrer" href={licenses[0].url}>
-        {license}
-      </a>
-    );
-  } else {
-    content = <span>{license}</span>;
-  }
-  return (
-    <Tooltip html="License">
-      <li>
-        <i className="fa fa-certificate text-muted" /> <span>{content}</span>
-      </li>
-    </Tooltip>
-  );
-}
-
-OtherLicense.propTypes = { licenses: PropTypes.array.isRequired };
-
-function Translations({ record }) {
-  const [open, setOpen] = useState(false);
-  const translations = get(record, "metadata.translations") || [];
-  return (
-    <>
-      {translations.length > 0 && (
-        <Tooltip html="Title and description are available in more languages, please click to see them all.">
-          <a
-            className="f8"
-            href="#translations"
-            onClick={(e) => {
-              e.preventDefault();
-              setOpen(true);
-            }}
-          >
-            <i className="fa fa-info-circle" />
-          </a>
-        </Tooltip>
-      )}
-      <DialogModal
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Available translations"
-      >
-        {translations.map((translation, index) => (
-          <div key={index}>
-            <strong>{isoToLanguage(translation.language)}</strong>
-            <h4>{get(translation, "title.title")}</h4>
-            <Html
-              as="p"
-              html={sanitize(translation.description) || "No description"}
-            />
-          </div>
-        ))}
-      </DialogModal>
-    </>
-  );
-}
-
-Translations.propTypes = { record: PropTypes.object.isRequired };
-
-function ChaptersSection({ chapters, chapterFrames, onViewAll, onJump }) {
-  return (
-    <div className="cds-detail-chapters px-20 mb-10">
-      <hr />
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "10px",
-        }}
-      >
-        <h3>
-          <strong>Chapters</strong>
-        </h3>
-        <button
-          type="button"
-          className="ui small basic button transcription-button"
-          onClick={onViewAll}
-        >
-          View All
-        </button>
-      </div>
-      <div
-        className="chapters-main-horizontal"
-        style={{ overflowX: "auto", overflowY: "hidden", whiteSpace: "nowrap" }}
-      >
-        <div
-          style={{
-            display: "inline-flex",
-            gap: "15px",
-            paddingBottom: "8px",
-            paddingTop: "8px",
-          }}
-        >
-          {chapters.map((chapter, index) => (
-            <HorizontalChapter
-              key={`${index}-${chapter.seconds}`}
-              chapter={chapter}
-              frame={chapterFrames[chapter.seconds]}
-              onJump={onJump}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-ChaptersSection.propTypes = {
-  chapters: PropTypes.array.isRequired,
-  chapterFrames: PropTypes.object.isRequired,
-  onViewAll: PropTypes.func.isRequired,
-  onJump: PropTypes.func.isRequired,
-};
-
-function HorizontalChapter({ chapter, frame = null, onJump }) {
-  const [hover, setHover] = useState(false);
-  const [failed, setFailed] = useState(false);
-  return (
-    <div
-      className="chapter-item-horizontal-main"
-      onClick={() => onJump(chapter.seconds)}
-      onKeyDown={(e) => e.key === "Enter" && onJump(chapter.seconds)}
-      onMouseOver={() => setHover(true)}
-      onMouseOut={() => setHover(false)}
-      onFocus={() => setHover(true)}
-      onBlur={() => setHover(false)}
-      role="button"
-      tabIndex={0}
-      style={{
-        display: "inline-block",
-        cursor: "pointer",
-        width: "213px",
-        flexShrink: 0,
-        padding: "12px",
-        border: `1px solid ${hover ? "#2196F3" : "#e1e8ed"}`,
-        borderRadius: "8px",
-        transition: "all 0.2s ease",
-        backgroundColor: hover ? "#f8f9fa" : "white",
-        transform: hover ? "translateY(-2px)" : "translateY(0)",
-      }}
-    >
-      <div
-        className="chapter-thumbnail-main-horizontal"
-        style={{
-          width: "189px",
-          height: "106px",
-          borderRadius: "6px",
-          overflow: "hidden",
-          backgroundColor: "#f5f5f5",
-          marginBottom: "8px",
-          position: "relative",
-        }}
-      >
-        {frame && !failed && (
-          <img
-            src={`/api/iiif/v2/${frame.bucket_id}:${frame.version_id}:${frame.key}/full/320,180/0/default.jpg`}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            alt={`Chapter ${chapter.timestamp}`}
-            onError={() => setFailed(true)}
-          />
-        )}
-        {!frame && (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              backgroundColor: "#e9ecef",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <i
-              className="fa fa-film"
-              style={{ color: "#6c757d", fontSize: "20px" }}
-            />
-          </div>
-        )}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "4px",
-            right: "4px",
-            backgroundColor: "rgba(0,0,0,0.8)",
-            color: "white",
-            padding: "2px 4px",
-            borderRadius: "2px",
-            fontSize: "11px",
-            fontWeight: 500,
-          }}
-        >
-          {chapter.timestamp}
-        </div>
-      </div>
-      <div className="chapter-info-main-horizontal">
-        <div
-          style={{
-            fontSize: "13px",
-            fontWeight: 600,
-            lineHeight: 1.3,
-            color: "#333",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "normal",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            lineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            maxHeight: "2.6em",
-          }}
-        >
-          {cleanHtmlFromTitle(chapter.title)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-HorizontalChapter.propTypes = {
-  chapter: PropTypes.object.isRequired,
-  frame: PropTypes.object,
-  onJump: PropTypes.func.isRequired,
-};
-
-/** The video player, with a placeholder until its page has loaded. */
-function PlayerFrame({ title, src }) {
-  const [loadedSrc, setLoadedSrc] = useState(null);
-  return (
-    <>
-      <iframe
-        title={title}
-        scrolling="no"
-        width="100%"
-        height="100%"
-        frameBorder="0"
-        src={src}
-        allowFullScreen
-        onLoad={() => setLoadedSrc(src)}
-      />
-      {loadedSrc !== src && (
-        <Placeholder
-          inverted
-          className="cds-placeholder cds-placeholder-black cds-placeholder-player-overlay"
-        >
-          <Placeholder.Image />
-        </Placeholder>
-      )}
-    </>
-  );
-}
-
-PlayerFrame.propTypes = {
-  title: PropTypes.string.isRequired,
-  src: PropTypes.string.isRequired,
-};
+import { DoiBadge, ReportNumberBadge } from "../components/Badges";
+import { Keywords } from "../components/Keywords";
+import { TrustedHtml } from "../components/TrustedHtml";
+import { prepareDescriptions, prepareRelatedIdentifiers } from "./metadata";
+import { sanitize } from "./sanitize";
+import { OtherLicense } from "./Licenses";
+import { Translations } from "./Translations";
+import { ChaptersSection } from "./Chapters";
+import { PlayerFrame } from "./PlayerFrame";
 
 export function VideoDetail({
   record,
@@ -467,7 +159,7 @@ export function VideoDetail({
   const contributors = groupBy(metadata.contributors, "role");
   const reportNumber = get(metadata, "report_number[0]");
   const hasIndico =
-    angularFilterBy(metadata.related_identifiers, { scheme: "indico" }).length >
+    filterByFields(metadata.related_identifiers, { scheme: "indico" }).length >
     0;
 
   return (
@@ -631,7 +323,7 @@ export function VideoDetail({
                       onClick={onDescriptionClick}
                       role="presentation"
                     >
-                      <Html
+                      <TrustedHtml
                         as="p"
                         className="mb-30"
                         html={

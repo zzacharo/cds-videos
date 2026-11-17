@@ -9,8 +9,9 @@
  */
 
 /*
- * Configuration of the deposit (the former ``cdsDeposit`` providers set in
- * ``avc.module.js``).
+ * Constants of the deposit: the processing tasks and their states, the
+ * metadata the videos inherit from the project or get from their file, and
+ * the API URLs.
  */
 
 import _template from "lodash/template";

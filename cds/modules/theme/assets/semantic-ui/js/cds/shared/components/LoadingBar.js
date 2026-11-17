@@ -16,7 +16,7 @@ const LATENCY_THRESHOLD = 100;
 
 /**
  * Thin progress bar at the top of the page shown while HTTP requests are
- * running (replaces angular-loading-bar, same look and timings).
+ * running (same look and timings as in the previous interface).
  */
 export function LoadingBar() {
   const [visible, setVisible] = useState(false);

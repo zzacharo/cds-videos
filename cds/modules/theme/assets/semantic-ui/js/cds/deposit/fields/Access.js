@@ -8,7 +8,7 @@
  * option) any later version.
  */
 
-/* Access restrictions and editors of the deposits (``cdsForm``). */
+/* Access restrictions and editors of the deposits. */
 
 import React from "react";
 import PropTypes from "prop-types";

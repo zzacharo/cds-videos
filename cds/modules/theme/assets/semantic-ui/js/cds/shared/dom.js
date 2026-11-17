@@ -30,3 +30,33 @@ export function parseJSON(value, fallback) {
     return fallback;
   }
 }
+
+/** Click handler of a link that runs ``fn`` instead of following it. */
+export function prevent(fn) {
+  return (e) => {
+    e.preventDefault();
+    fn();
+  };
+}
+
+/**
+ * Inline style hiding the element when ``condition`` is false. The element
+ * stays mounted.
+ */
+export function show(condition) {
+  return { display: condition ? undefined : "none" };
+}
+
+/** Dismissible alerts of the server rendered pages (``data-dismiss="alert"``). */
+export function initDismissibleAlerts() {
+  document.addEventListener("click", (event) => {
+    const button =
+      event.target.closest && event.target.closest('[data-dismiss="alert"]');
+    if (button) {
+      const alert = button.closest(".cds-alert, .alert");
+      if (alert) {
+        alert.remove();
+      }
+    }
+  });
+}
