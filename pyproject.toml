@@ -96,7 +96,7 @@ dependencies = [
 
 [project.optional-dependencies]
 xrootd = [
-    "invenio-xrootd==2.0.0a2",
+    "invenio-xrootd>=3.1.0,<4.0.0",
 ]
 
 [project.urls]

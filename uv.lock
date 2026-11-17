@@ -314,7 +314,7 @@ requires-dist = [
     { name = "invenio-stats", specifier = ">=7.0.0,<8.0.0" },
     { name = "invenio-theme", specifier = ">=5.0.0,<6.0.0" },
     { name = "invenio-userprofiles", specifier = ">=7.0.0,<8.0.0" },
-    { name = "invenio-xrootd", marker = "extra == 'xrootd'", specifier = "==2.0.0a2" },
+    { name = "invenio-xrootd", marker = "extra == 'xrootd'", specifier = ">=3.1.0,<4.0.0" },
     { name = "marshmallow-utils", specifier = ">=0.15.0,<1.0.0" },
     { name = "pycountry", specifier = ">=22.0.0" },
     { name = "python-ldap", specifier = ">=3.4.0,<3.5.0" },
@@ -2120,15 +2120,15 @@ wheels = [
 
 [[package]]
 name = "invenio-xrootd"
-version = "2.0.0a2"
+version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "invenio-files-rest" },
     { name = "xrootdpyfs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/87/18/12ddc7c9d98033d49ab0e352de81e910d3c13a5ab4719c701db98f6af6e8/invenio-xrootd-2.0.0a2.tar.gz", hash = "sha256:9cf311ac5b6346508f53405301b7c7e908210ab898b702cb1fc06a98c6197446", size = 19942, upload-time = "2023-10-12T11:27:29.573Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/ea/7f353afaac69e5ac976a94ed5e1cd6f917aa9fbf6ab6256fba10f32b26f8/invenio_xrootd-3.1.0.tar.gz", hash = "sha256:d851aac74fb6bc49ee64c9a180feac24442ff9f8331452ce864761525e9e97fb", size = 5329, upload-time = "2026-10-09T09:14:14.322Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cf/31/d64ebe8b3bb852363e89ea3bd86b0625b8dd9de48f4cac61a9a3720dccc0/invenio_xrootd-2.0.0a2-py2.py3-none-any.whl", hash = "sha256:be94e64a116cbd7e8c87cc64e9c3432322e0380e24ac662c64cb53e166e6a7bf", size = 7908, upload-time = "2023-10-12T11:27:27.97Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/d8/163bcd5e4a10f5dad681ca93dcd1756631e83bbc96477ec64b9d5c693e5a/invenio_xrootd-3.1.0-py3-none-any.whl", hash = "sha256:05ec0641bdef4b7878202b16e279853e64ca7a14af350541123c06c71437d22e", size = 7001, upload-time = "2026-10-09T09:14:13.391Z" },
 ]
 
 [[package]]
