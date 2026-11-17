@@ -136,15 +136,20 @@ export function getUrlPath(url) {
   return parser.pathname;
 }
 
+/**
+ * Headers bypassing the browser cache. The deposit API answers 304 as long as
+ * the revision of the record is the same, while the task states it returns
+ * come from the workflows and change without a new revision.
+ */
+export const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-cache, no-store, must-revalidate",
+  Pragma: "no-cache",
+  Expires: 0,
+};
+
 export async function resolveJSON(url) {
   try {
-    return await http.get(url, {
-      headers: {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: 0,
-      },
-    });
+    return await http.get(url, { headers: NO_CACHE_HEADERS });
   } catch (error) {
     throw toResponse(error);
   }

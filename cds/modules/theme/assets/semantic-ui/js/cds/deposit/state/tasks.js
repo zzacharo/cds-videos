@@ -22,7 +22,7 @@ import _mapValues from "lodash/mapValues";
 
 import { toaster } from "@js/cds/shared/components/Toaster";
 
-import { action } from "../api";
+import { action, NO_CACHE_HEADERS } from "../api";
 import { DEPOSIT_STATES, urlBuilder } from "../constants";
 import { patchDeposit, setPristine } from "./deposit";
 import { ActionTypes } from "./reducer";
@@ -94,7 +94,7 @@ export function refreshDeposits() {
     const project = selectProject(state);
     const url =
       (project && project.links.self) || state.config.projectLinks.self;
-    const response = await action(url, "GET", {}, undefined, BACKGROUND);
+    const response = await action(url, "GET", {}, NO_CACHE_HEADERS, BACKGROUND);
     const { metadata } = response.data;
     [metadata].concat(metadata.videos || []).forEach((depositMetadata) => {
       const id = depositMetadata._deposit.id;
