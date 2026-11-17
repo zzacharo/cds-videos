@@ -13,7 +13,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import { prevent, show } from "@js/cds/shared/dom";
+import { prevent } from "@js/cds/shared/dom";
 
 import { useDeposit, useDepositActions } from "../state/hooks";
 import { isDraft } from "../state/records";
@@ -29,12 +29,10 @@ function RestartLink({ status, blocked, onRestart }) {
       style={blocked ? { pointerEvents: "none" } : undefined}
       onClick={prevent(onRestart)}
     >
-      <i
-        style={show(status === "SUCCESS" || status === "FAILURE")}
-        className={`fa fa-refresh ${status}`}
-        aria-hidden="true"
-      />
-      <i style={show(running(status))} className="fa fa-spinner fa-spin" />
+      {(status === "SUCCESS" || status === "FAILURE") && (
+        <i className={`fa fa-refresh ${status}`} aria-hidden="true" />
+      )}
+      {running(status) && <i className="fa fa-spinner fa-spin" />}
     </a>
   );
 }

@@ -109,199 +109,188 @@ export function VideoUploader({ id }) {
         }
       />
       {/* Master video and subformats */}
-      <div className="cds-panel" style={show(files.length > 0)}>
-        <div className="cds-panel-heading">Main &amp; Subformats files</div>
-        <table className="cds-table">
-          <tbody>
-            {FILES_HEADER}
-            <tr className="active">
-              <FileName file={master}>
-                {master.tags && master.tags.times_replaced && (
-                  <span>
-                    <a
-                      href="#replaced"
-                      onClick={prevent(() => setTimesReplacedOpen(true))}
-                    >
-                      {" "}
-                      <span className="cds-badge">
-                        {" "}
-                        <i className="fa fa-code-fork" />{" "}
-                        {master.tags.times_replaced}
-                      </span>
-                    </a>
-                    <DialogModal
-                      open={timesReplacedOpen}
-                      onClose={() => setTimesReplacedOpen(false)}
-                      title="The master video has been replaced"
-                    >
-                      <p className="text-left">
-                        The master video has been replaced{" "}
-                        <strong>{master.tags.times_replaced} time(s)</strong>.
-                      </p>
-                    </DialogModal>
-                  </span>
-                )}
-              </FileName>
-              <FileSize file={master} />
-              <td className="text-center">
-                <span
-                  style={show(
-                    master.percentage < 100 && !master.status_failure
-                  )}
-                >
-                  {" "}
-                  %
-                </span>
-                <span
-                  style={show(master.status_pending || master.status_started)}
-                >
-                  Processing...
-                </span>
-                <span
-                  style={show(master.status_failure)}
-                  className="text-danger"
-                >
-                  Error
-                </span>
-                <span
-                  style={show(
-                    (master.status_completed || master.percentage === 100) &&
-                      !master.status_failure
-                  )}
-                  className="text-success"
-                >
-                  ✓
-                </span>
-              </td>
-              <td style={show(currentMaster)} className="text-center">
-                <HowToUpdateDialog />
-              </td>
-            </tr>
-            <tr style={show((master.subformat || []).length > 0)}>
-              <td>Subformats ({(master.subformat || []).length})</td>
-              <td />
-              <td className="text-center" />
-              <td className="text-center">
-                <a
-                  href="#subformats"
-                  onClick={prevent(() => setHideSubformats(!hideSubformats))}
-                >
-                  {hideSubformats ? <span>Show</span> : <span>Hide</span>}
-                </a>
-              </td>
-            </tr>
-            {(master.subformat || [])
-              .filter(
-                (f) => f.preset_quality || (f.tags && f.tags.preset_quality)
-              )
-              .map((f, index) => (
-                // eslint-disable-next-line react/no-array-index-key
-                <tr
-                  key={index}
-                  className="sel-file"
-                  style={show(!hideSubformats)}
-                >
-                  <td title={f.preset_quality || f.tags.preset_quality}>
-                    {f.preset_quality || f.tags.preset_quality}
-                  </td>
-                  <td />
-                  <td className="text-center">
-                    <span style={show(f.status_pending || f.status_started)}>
-                      <i className="fa fa-spinner fa-spin" />
-                    </span>
-                    <span
-                      style={show(f.status_failure)}
-                      className="text-danger"
-                    >
-                      Error
-                    </span>
-                    <span
-                      style={show(f.status_completed)}
-                      className="text-success"
-                    >
-                      Done
-                    </span>
-                    <span
-                      style={show(f.status_cancelled)}
-                      className="text-muted"
-                    >
-                      <small>
-                        <Tooltip html="Subformat quality skipped because the uploaded video resolution is smaller than this quality">
-                          <i className="fa fa-info-circle" />
-                        </Tooltip>
-                      </small>
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    <span style={show(isSuperAdmin)}>
+      {files.length > 0 && (
+        <div className="cds-panel">
+          <div className="cds-panel-heading">Main &amp; Subformats files</div>
+          <table className="cds-table">
+            <tbody>
+              {FILES_HEADER}
+              <tr className="active">
+                <FileName file={master}>
+                  {master.tags && master.tags.times_replaced && (
+                    <span>
                       <a
-                        href="#restart"
-                        style={show(f.status_failure || f.status_success)}
-                        onClick={prevent(() =>
-                          actions.restartTask(f.flow_id, f.task_id)
-                        )}
+                        href="#replaced"
+                        onClick={prevent(() => setTimesReplacedOpen(true))}
                       >
-                        <i className="fa fa-undo" />
+                        {" "}
+                        <span className="cds-badge">
+                          {" "}
+                          <i className="fa fa-code-fork" />{" "}
+                          {master.tags.times_replaced}
+                        </span>
                       </a>
+                      <DialogModal
+                        open={timesReplacedOpen}
+                        onClose={() => setTimesReplacedOpen(false)}
+                        title="The master video has been replaced"
+                      >
+                        <p className="text-left">
+                          The master video has been replaced{" "}
+                          <strong>{master.tags.times_replaced} time(s)</strong>.
+                        </p>
+                      </DialogModal>
                     </span>
+                  )}
+                </FileName>
+                <FileSize file={master} />
+                <td className="text-center">
+                  {master.percentage < 100 && !master.status_failure && (
+                    <span> %</span>
+                  )}
+                  {(master.status_pending || master.status_started) && (
+                    <span>Processing...</span>
+                  )}
+                  {master.status_failure && (
+                    <span className="text-danger">Error</span>
+                  )}
+                  {(master.status_completed || master.percentage === 100) &&
+                    !master.status_failure && (
+                      <span className="text-success">✓</span>
+                    )}
+                </td>
+                {/* Hidden, not removed: CSS pads the last cell of the row */}
+                <td style={show(currentMaster)} className="text-center">
+                  <HowToUpdateDialog />
+                </td>
+              </tr>
+              {(master.subformat || []).length > 0 && (
+                <tr>
+                  <td>Subformats ({(master.subformat || []).length})</td>
+                  <td />
+                  <td className="text-center" />
+                  <td className="text-center">
+                    <a
+                      href="#subformats"
+                      onClick={prevent(() =>
+                        setHideSubformats(!hideSubformats)
+                      )}
+                    >
+                      {hideSubformats ? <span>Show</span> : <span>Hide</span>}
+                    </a>
                   </td>
                 </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
-      {/* Thumbnails */}
-      <DropZone
-        className="cds-panel"
-        style={show((master.frame || []).length > 0)}
-        clickable={false}
-        accept="image/*"
-        pattern="image/*"
-        multiple
-        onFiles={addFiles}
-      >
-        <div>
-          <div className="cds-panel-heading">
-            Thumbnails ({(master.frame || []).length + posters.length})
-            <span className="pull-right">
-              {!published && (
-                <AddLink
-                  accept="image/*"
-                  pattern="image/*"
-                  onFiles={addFiles}
-                />
               )}
-            </span>
-          </div>
-          <div className="cds-panel-body">
-            <div className="cds-deposit-thumbnail-pad">
-              {(master.frame || []).concat(posters).map((frame, index) => (
-                // eslint-disable-next-line react/no-array-index-key
-                <div className="cds-deposit-frame-thumbnail" key={index}>
-                  <a
-                    href={frame.links && frame.links.self}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <img width="100%" alt="" src={thumbnailPreview(frame)} />
-                  </a>
-                </div>
-              ))}
+              {(master.subformat || [])
+                .filter(
+                  (f) => f.preset_quality || (f.tags && f.tags.preset_quality)
+                )
+                .map((f, index) =>
+                  // eslint-disable-next-line react/no-array-index-key
+                  !hideSubformats ? (
+                    <tr key={index} className="sel-file">
+                      <td title={f.preset_quality || f.tags.preset_quality}>
+                        {f.preset_quality || f.tags.preset_quality}
+                      </td>
+                      <td />
+                      <td className="text-center">
+                        {(f.status_pending || f.status_started) && (
+                          <span>
+                            <i className="fa fa-spinner fa-spin" />
+                          </span>
+                        )}
+                        {f.status_failure && (
+                          <span className="text-danger">Error</span>
+                        )}
+                        {f.status_completed && (
+                          <span className="text-success">Done</span>
+                        )}
+                        {f.status_cancelled && (
+                          <span className="text-muted">
+                            <small>
+                              <Tooltip html="Subformat quality skipped because the uploaded video resolution is smaller than this quality">
+                                <i className="fa fa-info-circle" />
+                              </Tooltip>
+                            </small>
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-center">
+                        {isSuperAdmin && (
+                          <span>
+                            {(f.status_failure || f.status_success) && (
+                              <a
+                                href="#restart"
+                                onClick={prevent(() =>
+                                  actions.restartTask(f.flow_id, f.task_id)
+                                )}
+                              >
+                                <i className="fa fa-undo" />
+                              </a>
+                            )}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ) : null
+                )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {/* Thumbnails */}
+      {(master.frame || []).length > 0 && (
+        <DropZone
+          className="cds-panel"
+          clickable={false}
+          accept="image/*"
+          pattern="image/*"
+          multiple
+          onFiles={addFiles}
+        >
+          <div>
+            <div className="cds-panel-heading">
+              Thumbnails ({(master.frame || []).length + posters.length})
+              <span className="pull-right">
+                {!published && (
+                  <AddLink
+                    accept="image/*"
+                    pattern="image/*"
+                    onFiles={addFiles}
+                  />
+                )}
+              </span>
+            </div>
+            <div className="cds-panel-body">
+              <div className="cds-deposit-thumbnail-pad">
+                {(master.frame || []).concat(posters).map((frame, index) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <div className="cds-deposit-frame-thumbnail" key={index}>
+                    <a
+                      href={frame.links && frame.links.self}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <img width="100%" alt="" src={thumbnailPreview(frame)} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <hr className="my-10" />
+            <div className="pa-10 text-muted">
+              <TipsBox>
+                <li>
+                  Want to customize the cover of your video? Just upload an
+                  image named <mark>poster.png</mark> or <mark>poster.jpg</mark>
+                  . Need to update it later? Simply upload a new image with the
+                  same name, and the cover will be replaced automatically.
+                </li>
+              </TipsBox>
             </div>
           </div>
-          <hr className="my-10" />
-          <div className="pa-10 text-muted">
-            <TipsBox>
-              <li>
-                Want to customize the cover of your video? Just upload an image
-                named <mark>poster.png</mark> or <mark>poster.jpg</mark>. Need
-                to update it later? Simply upload a new image with the same
-                name, and the cover will be replaced automatically.
-              </li>
-            </TipsBox>
-          </div>
-        </div>
-      </DropZone>
+        </DropZone>
+      )}
       {/* Subtitles */}
       <div className="cds-panel">
         <div className="cds-panel-heading">
@@ -327,33 +316,38 @@ export function VideoUploader({ id }) {
       {/* Additional files */}
       <div className="cds-panel">
         <div className="cds-panel-heading">Additional files</div>
-        <div className="cds-panel-heading" style={show(others.length > 0)}>
-          <SearchRow files={files} search={search} setSearch={setSearch} />
-        </div>
-        <table style={show(others.length > 0)} className="cds-table">
-          <tbody>
-            {FILES_HEADER}
-            <tr style={show(visibleOthers.length === 0)}>
-              <td colSpan="4" className="text-center text-muted">
-                {" "}
-                No results.
-              </td>
-            </tr>
-            {visibleOthers.map((file, index) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <tr className="sel-file" key={`${file.key}-${index}`}>
-                <FileName file={file} />
-                <FileSize file={file} />
-                <FileProgress file={file} done="Done" />
-                <td className="text-center">
-                  {!(file.percentage < 100 || published) && (
-                    <RemoveLink onRemove={actions.removeFile} file={file} />
-                  )}
+        {others.length > 0 && (
+          <div className="cds-panel-heading">
+            <SearchRow files={files} search={search} setSearch={setSearch} />
+          </div>
+        )}
+        {others.length > 0 && (
+          <table className="cds-table">
+            <tbody>
+              {FILES_HEADER}
+              {/* Hidden, not removed: CSS styles the first row of the table */}
+              <tr style={show(visibleOthers.length === 0)}>
+                <td colSpan="4" className="text-center text-muted">
+                  {" "}
+                  No results.
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
+              {visibleOthers.map((file, index) => (
+                // eslint-disable-next-line react/no-array-index-key
+                <tr className="sel-file" key={`${file.key}-${index}`}>
+                  <FileName file={file} />
+                  <FileSize file={file} />
+                  <FileProgress file={file} done="Done" />
+                  <td className="text-center">
+                    {!(file.percentage < 100 || published) && (
+                      <RemoveLink onRemove={actions.removeFile} file={file} />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
         <div className="cds-panel-body">
           {!published && (
             <div className="cds-deposit-box">

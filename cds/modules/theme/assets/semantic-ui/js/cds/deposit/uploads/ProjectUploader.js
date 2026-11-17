@@ -15,7 +15,7 @@ import PropTypes from "prop-types";
 import clsx from "clsx";
 
 import { filterByText } from "@js/cds/shared/utils/collections";
-import { prevent, show } from "@js/cds/shared/dom";
+import { prevent } from "@js/cds/shared/dom";
 
 import { useDeposit, useDepositActions } from "../state/hooks";
 import { findMasterFile, isPublished } from "../state/records";
@@ -53,154 +53,158 @@ export function ProjectUploader({ id }) {
           `Are you sure you want to replace the uploaded video with ${name}?`
         }
       />
-      <div className="cds-panel" style={show(files.length > 0)}>
-        <div className="cds-panel-heading">
-          <SearchRow files={files} search={search} setSearch={setSearch} />
-        </div>
-        <table className="cds-table">
-          <tbody>
-            <tr>
-              <SortHeader
-                label="Filename"
-                field="key"
-                sort={sort}
-                setSort={setSort}
-              />
-              <SortHeader
-                label="Size"
-                field="size"
-                sort={sort}
-                setSort={setSort}
-              />
-              <th className="text-center">Progress</th>
-              <th className="text-center">Actions</th>
-            </tr>
-            {visible.map((file, index) => (
-              <tr
-                // eslint-disable-next-line react/no-array-index-key
-                key={`${file.key}-${index}`}
-                className={clsx(
-                  "sel-file",
-                  file.context_type === "master" && "active"
-                )}
-              >
-                <FileName file={file} />
-                <FileSize file={file} />
-                <FileProgress file={file} done="✓" />
-                <td className="text-center">
-                  {!(
-                    file.context_type === "master" || file.percentage < 100
-                  ) && <RemoveLink onRemove={actions.removeFile} file={file} />}
-                  <span
-                    style={show(
-                      file.context_type === "master" || file.percentage < 100
-                    )}
-                  >
-                    <HowToUpdateDialog />
-                  </span>
-                </td>
+      {files.length > 0 && (
+        <div className="cds-panel">
+          <div className="cds-panel-heading">
+            <SearchRow files={files} search={search} setSearch={setSearch} />
+          </div>
+          <table className="cds-table">
+            <tbody>
+              <tr>
+                <SortHeader
+                  label="Filename"
+                  field="key"
+                  sort={sort}
+                  setSort={setSort}
+                />
+                <SortHeader
+                  label="Size"
+                  field="size"
+                  sort={sort}
+                  setSort={setSort}
+                />
+                <th className="text-center">Progress</th>
+                <th className="text-center">Actions</th>
               </tr>
-            ))}
-            <tr style={show(visible.length === 0)}>
-              <td colSpan="4" className="text-center text-muted">
-                {" "}
-                No results.
-              </td>
-            </tr>
-            <tr
-              className="warning"
-              style={show((master.subformat || []).length > 0)}
-            >
-              <td>Extracted subformats</td>
-              <td />
-              <td className="text-center" />
-              <td className="text-center">
-                <a
-                  href="#subformats"
-                  onClick={prevent(() => setShowSubformats(!showSubformats))}
-                >
-                  {showSubformats ? <span>Hide</span> : <span>Show</span>}
-                </a>
-              </td>
-            </tr>
-            {(master.subformat || [])
-              .filter((f) => f.key)
-              .map((f) => (
+              {visible.map((file, index) => (
                 <tr
-                  key={f.key}
-                  className="sel-file"
-                  style={show(showSubformats)}
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={`${file.key}-${index}`}
+                  className={clsx(
+                    "sel-file",
+                    file.context_type === "master" && "active"
+                  )}
                 >
-                  <FileName file={f} />
-                  <td />
+                  <FileName file={file} />
+                  <FileSize file={file} />
+                  <FileProgress file={file} done="✓" />
                   <td className="text-center">
-                    {f.percentage > 0 &&
-                      !f.status_completed &&
-                      !f.status_failure && <span>{toInt(f.percentage)} %</span>}
-                    {!f.percentage &&
-                      !f.status_completed &&
-                      !f.status_failure && (
-                        <span>
-                          <i className="fa fa-spinner fa-spin" />
-                        </span>
-                      )}
-                    <span
-                      style={show(f.status_failure)}
-                      className="text-danger"
-                    >
-                      Error
-                    </span>
-                    <span
-                      style={show(f.status_completed && !f.status_failure)}
-                      className="text-success"
-                    >
-                      ✓
-                    </span>
+                    {!(
+                      file.context_type === "master" || file.percentage < 100
+                    ) && (
+                      <RemoveLink onRemove={actions.removeFile} file={file} />
+                    )}
+                    {(file.context_type === "master" ||
+                      file.percentage < 100) && (
+                      <span>
+                        <HowToUpdateDialog />
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
-            <tr className="warning" style={show(master.frame)}>
-              <td>Extracted frames</td>
-              <td />
-              <td />
-              <td className="text-center">
-                <a
-                  href="#frames"
-                  onClick={prevent(() => setShowFrames(!showFrames))}
-                >
-                  {showFrames ? <span>Hide</span> : <span>Show</span>}
-                </a>
-              </td>
-            </tr>
-            <tr style={show(showFrames)}>
-              <td colSpan="4">
-                <div className="cds-row cds-deposit-thumbnail-pad">
-                  {(master.frame || []).map((frame) => (
-                    <div
-                      className="cds-deposit-frame-thumbnail"
-                      key={frame.key}
+              {visible.length === 0 && (
+                <tr>
+                  <td colSpan="4" className="text-center text-muted">
+                    {" "}
+                    No results.
+                  </td>
+                </tr>
+              )}
+              {(master.subformat || []).length > 0 && (
+                <tr className="warning">
+                  <td>Extracted subformats</td>
+                  <td />
+                  <td className="text-center" />
+                  <td className="text-center">
+                    <a
+                      href="#subformats"
+                      onClick={prevent(() =>
+                        setShowSubformats(!showSubformats)
+                      )}
                     >
-                      <a
-                        href={frame.links && frame.links.self}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {showFrames && (
-                          <img
-                            width="100%"
-                            alt=""
-                            src={thumbnailPreview(frame)}
-                          />
+                      {showSubformats ? <span>Hide</span> : <span>Show</span>}
+                    </a>
+                  </td>
+                </tr>
+              )}
+              {(master.subformat || [])
+                .filter((f) => f.key)
+                .map((f) =>
+                  showSubformats ? (
+                    <tr key={f.key} className="sel-file">
+                      <FileName file={f} />
+                      <td />
+                      <td className="text-center">
+                        {f.percentage > 0 &&
+                          !f.status_completed &&
+                          !f.status_failure && (
+                            <span>{toInt(f.percentage)} %</span>
+                          )}
+                        {!f.percentage &&
+                          !f.status_completed &&
+                          !f.status_failure && (
+                            <span>
+                              <i className="fa fa-spinner fa-spin" />
+                            </span>
+                          )}
+                        {f.status_failure && (
+                          <span className="text-danger">Error</span>
                         )}
-                      </a>
+                        {f.status_completed && !f.status_failure && (
+                          <span className="text-success">✓</span>
+                        )}
+                      </td>
+                    </tr>
+                  ) : null
+                )}
+              {master.frame && (
+                <tr className="warning">
+                  <td>Extracted frames</td>
+                  <td />
+                  <td />
+                  <td className="text-center">
+                    <a
+                      href="#frames"
+                      onClick={prevent(() => setShowFrames(!showFrames))}
+                    >
+                      {showFrames ? <span>Hide</span> : <span>Show</span>}
+                    </a>
+                  </td>
+                </tr>
+              )}
+              {showFrames && (
+                <tr>
+                  <td colSpan="4">
+                    <div className="cds-row cds-deposit-thumbnail-pad">
+                      {(master.frame || []).map((frame) => (
+                        <div
+                          className="cds-deposit-frame-thumbnail"
+                          key={frame.key}
+                        >
+                          <a
+                            href={frame.links && frame.links.self}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {showFrames && (
+                              <img
+                                width="100%"
+                                alt=""
+                                src={thumbnailPreview(frame)}
+                              />
+                            )}
+                          </a>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
       <hr className="my-20" />
       {!published && (
         <div className="cds-deposit-box">

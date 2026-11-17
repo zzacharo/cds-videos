@@ -14,7 +14,6 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import { DialogModal } from "@js/cds/shared/components/DialogModal";
-import { show } from "@js/cds/shared/dom";
 
 import { useDeposit, useDepositActions } from "../state/hooks";
 import { isPublished } from "../state/records";
@@ -26,30 +25,31 @@ export function ExtractedMetadata({ id }) {
   const actions = useDepositActions(id);
   const [open, setOpen] = useState(false);
   const toDisplay = metadataToFill ? metadataToFill[1] : {};
-  return (
-    <div style={show(!isPublished(record))}>
-      <div
-        style={show(metadataToFill)}
-        className="cds-alert cds-alert-warning cds-alert-dismissible cds-deposit-metadata-extraction-alert"
-        role="alert"
-      >
-        <button
-          type="button"
-          className="cds-close"
-          aria-label="Close"
-          onClick={actions.dismissExtractedMetadata}
+  return !isPublished(record) ? (
+    <div>
+      {metadataToFill && (
+        <div
+          className="cds-alert cds-alert-warning cds-alert-dismissible cds-deposit-metadata-extraction-alert"
+          role="alert"
         >
-          <span aria-hidden="true">&times;</span>
-        </button>
-        Extracted metadata can be used to automatically fill part of the form.{" "}
-        <button
-          type="button"
-          className="ui small orange button pull-right"
-          onClick={() => setOpen(true)}
-        >
-          See the extracted metadata
-        </button>
-      </div>
+          <button
+            type="button"
+            className="cds-close"
+            aria-label="Close"
+            onClick={actions.dismissExtractedMetadata}
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+          Extracted metadata can be used to automatically fill part of the form.{" "}
+          <button
+            type="button"
+            className="ui small orange button pull-right"
+            onClick={() => setOpen(true)}
+          >
+            See the extracted metadata
+          </button>
+        </div>
+      )}
       <DialogModal
         open={open}
         onClose={() => setOpen(false)}
@@ -69,7 +69,7 @@ export function ExtractedMetadata({ id }) {
         </ul>
       </DialogModal>
     </div>
-  );
+  ) : null;
 }
 
 ExtractedMetadata.propTypes = { id: PropTypes.string.isRequired };

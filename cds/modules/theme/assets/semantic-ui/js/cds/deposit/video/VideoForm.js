@@ -44,8 +44,10 @@ export function VideoForm({ id, onTranscodeInfo }) {
     <>
       <ErrorAlerts id={id} />
       <ExtractedMetadata id={id} />
+      {/* Hidden, not unmounted: keeps the player preview and the form */}
       <div className="cds-row" style={show(!waitingUpload)}>
         {/* Brief view */}
+        {/* Hidden, not unmounted: keeps the player preview loaded */}
         <div style={show(published && !showAll)} className="cds-col-sm-12">
           <div className="cds-row">
             <div className="cds-col-sm-3">
@@ -80,90 +82,95 @@ export function VideoForm({ id, onTranscodeInfo }) {
           </div>
         </div>
         {/* Detail view */}
+        {/* Hidden, not unmounted: keeps the editor and the open tab */}
         <div
           style={show(!published || (published && showAll))}
           className="cds-col-sm-12"
         >
           <div className="cds-row">
             <div className="cds-col-sm-12">
-              <div style={show(status === DEPOSIT_STATUSES.PENDING)}>
-                <ProgressBar striped active>
-                  Loading ...
-                </ProgressBar>
-              </div>
-              <div
-                style={show(status === DEPOSIT_STATUSES.STARTED)}
-                className="cds-row"
-              >
-                <ProgressBar striped active>
-                  {taskRepr(startedTask)}
-                </ProgressBar>
-              </div>
-              <div
-                style={show(
-                  status === DEPOSIT_STATUSES.SUCCESS &&
-                    !published &&
-                    !record.recid
+              {status === DEPOSIT_STATUSES.PENDING && (
+                <div>
+                  <ProgressBar striped active>
+                    Loading ...
+                  </ProgressBar>
+                </div>
+              )}
+              {status === DEPOSIT_STATUSES.STARTED && (
+                <div className="cds-row">
+                  <ProgressBar striped active>
+                    {taskRepr(startedTask)}
+                  </ProgressBar>
+                </div>
+              )}
+              {status === DEPOSIT_STATUSES.SUCCESS &&
+                !published &&
+                !record.recid && (
+                  <div className="cds-row">
+                    <ProgressBar success>
+                      <strong>Tasks successfully completed!</strong>
+                    </ProgressBar>
+                  </div>
                 )}
-                className="cds-row"
-              >
-                <ProgressBar success>
-                  <strong>Tasks successfully completed!</strong>
-                </ProgressBar>
-              </div>
             </div>
             <VideoSidebar id={id} onTranscodeInfo={onTranscodeInfo} />
             <VideoTabs id={id} />
           </div>
         </div>
-        <div style={show(published)} className="cds-row">
-          <div className="cds-col-sm-12 text-center">
-            <div className="px-20">
-              <hr className="mb-15" />
-              <button
-                type="button"
-                className="ui small basic button"
-                onClick={() => changeShowAll(showAll)}
-              >
-                {showAll ? "Hide details" : "Show details"}
-              </button>
+        {published && (
+          <div className="cds-row">
+            <div className="cds-col-sm-12 text-center">
+              <div className="px-20">
+                <hr className="mb-15" />
+                <button
+                  type="button"
+                  className="ui small basic button"
+                  onClick={() => changeShowAll(showAll)}
+                >
+                  {showAll ? "Hide details" : "Show details"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
       {/* Waiting for the upload */}
-      <div className="cds-row" style={show(waitingUpload)}>
-        <div className="cds-col-md-12">
-          <div className="cds-progress">
-            <div
-              style={{
-                ...show(firstFile.percentage),
-                width: `${firstFile.percentage || 0}%`,
-              }}
-              className="cds-progress-bar cds-progress-bar-primary"
-              role="progressbar"
-            >
-              <span className="sr-only">
-                {firstFile.percentage || 0}% Complete
-              </span>
+      {waitingUpload && (
+        <div className="cds-row">
+          <div className="cds-col-md-12">
+            <div className="cds-progress">
+              {Boolean(firstFile.percentage) && (
+                <div
+                  style={{
+                    width: `${firstFile.percentage || 0}%`,
+                  }}
+                  className="cds-progress-bar cds-progress-bar-primary"
+                  role="progressbar"
+                >
+                  <span className="sr-only">
+                    {firstFile.percentage || 0}% Complete
+                  </span>
+                </div>
+              )}
+              {!firstFile.percentage && (
+                <div
+                  style={{ width: "100%" }}
+                  className="cds-progress-bar cds-progress-bar-primary cds-progress-bar-striped active"
+                  role="progressbar"
+                >
+                  <span className="sr-only">Loading ...</span>
+                  Loading ...
+                </div>
+              )}
             </div>
-            <div
-              style={{ ...show(!firstFile.percentage), width: "100%" }}
-              className="cds-progress-bar cds-progress-bar-primary cds-progress-bar-striped active"
-              role="progressbar"
-            >
-              <span className="sr-only">Loading ...</span>
-              Loading ...
-            </div>
+            {Boolean(firstFile.percentage) && (
+              <p className="text-muted text-center f5">
+                {firstFile.percentage || 0}%
+              </p>
+            )}
           </div>
-          <p
-            style={show(firstFile.percentage)}
-            className="text-muted text-center f5"
-          >
-            {firstFile.percentage || 0}%
-          </p>
         </div>
-      </div>
+      )}
     </>
   );
 }

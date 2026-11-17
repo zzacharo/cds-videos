@@ -15,7 +15,7 @@ import PropTypes from "prop-types";
 import _orderBy from "lodash/orderBy";
 
 import { bytesToHumanReadable } from "@js/cds/shared/utils/text";
-import { prevent, show } from "@js/cds/shared/dom";
+import { prevent } from "@js/cds/shared/dom";
 
 function truncate(text, length) {
   return (text || "").slice(0, length);
@@ -25,7 +25,7 @@ export function FileName({ file, children = null }) {
   return (
     <td title={file.key}>
       {truncate(file.key, 40)}{" "}
-      <span style={show((file.key || "").length > 40)}>...</span>
+      {(file.key || "").length > 40 && <span>...</span>}
       {children}
     </td>
   );
@@ -49,7 +49,7 @@ export function SearchRow({ files, search, setSearch }) {
   return (
     <div className="cds-row">
       <div className="cds-col-sm-6">
-        <p style={show(files.length > 0)} className="text-muted" />
+        {files.length > 0 && <p className="text-muted" />}
       </div>
       <div className="cds-col-sm-12">
         <div className="form-group">
@@ -111,24 +111,15 @@ FileSize.propTypes = { file: PropTypes.object.isRequired };
 export function FileProgress({ file, done }) {
   return (
     <td className="text-center">
-      <span style={show(file.percentage < 100 && !file.status_failure)}>
-        {file.percentage} %
-      </span>
-      <span style={show(file.status_pending || file.status_started)}>
-        Processing...
-      </span>
-      <span style={show(file.status_failure)} className="text-danger">
-        Error
-      </span>
-      <span
-        style={show(
-          (file.status_completed || file.percentage === 100) &&
-            !file.status_failure
-        )}
-        className="text-success"
-      >
-        {done}
-      </span>
+      {file.percentage < 100 && !file.status_failure && (
+        <span>{file.percentage} %</span>
+      )}
+      {(file.status_pending || file.status_started) && (
+        <span>Processing...</span>
+      )}
+      {file.status_failure && <span className="text-danger">Error</span>}
+      {(file.status_completed || file.percentage === 100) &&
+        !file.status_failure && <span className="text-success">{done}</span>}
     </td>
   );
 }
@@ -161,14 +152,12 @@ export function SortHeader({ label, field, sort, setSort }) {
         )}
       >
         {label}{" "}
-        <span
-          style={show(sort.type === field && !sort.reverse)}
-          className="fa fa-caret-down"
-        />
-        <span
-          style={show(sort.type === field && sort.reverse)}
-          className="fa fa-caret-up"
-        />
+        {sort.type === field && !sort.reverse && (
+          <span className="fa fa-caret-down" />
+        )}
+        {sort.type === field && sort.reverse && (
+          <span className="fa fa-caret-up" />
+        )}
       </a>
     </th>
   );

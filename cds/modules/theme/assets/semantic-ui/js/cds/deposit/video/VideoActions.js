@@ -14,7 +14,6 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import { DialogModal } from "@js/cds/shared/components/DialogModal";
-import { show } from "@js/cds/shared/dom";
 
 import { DEPOSIT_STATUSES } from "../constants";
 import {
@@ -47,8 +46,8 @@ export function VideoActions({ id }) {
     project.category &&
     project.type;
 
-  return (
-    <div style={show(!deposit.waitingUpload)}>
+  return !deposit.waitingUpload ? (
+    <div>
       <DialogModal
         open={deleteShown}
         onClose={() => setDeleteShown(false)}
@@ -162,7 +161,7 @@ export function VideoActions({ id }) {
         )}
       </div>
     </div>
-  );
+  ) : null;
 }
 
 VideoActions.propTypes = { id: PropTypes.string.isRequired };

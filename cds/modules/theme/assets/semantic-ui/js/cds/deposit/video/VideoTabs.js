@@ -13,7 +13,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
-import { prevent, show } from "@js/cds/shared/dom";
+import { prevent } from "@js/cds/shared/dom";
 
 import { RestrictionsBox } from "../fields/Access";
 import {
@@ -120,9 +120,11 @@ function AdminTab({ id }) {
               {showMetadata ? "Hide" : "Show"} metadata
             </a>
           </div>
-          <span style={show(showMetadata)}>
-            {showMetadata && <pre>{JSON.stringify(record, null, 2)}</pre>}
-          </span>
+          {showMetadata && (
+            <span>
+              {showMetadata && <pre>{JSON.stringify(record, null, 2)}</pre>}
+            </span>
+          )}
         </div>
       </div>
     </>

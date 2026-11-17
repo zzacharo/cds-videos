@@ -17,7 +17,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import { DialogModal } from "@js/cds/shared/components/DialogModal";
-import { prevent, show } from "@js/cds/shared/dom";
+import { prevent } from "@js/cds/shared/dom";
 
 import { urlBuilder } from "../constants";
 import {
@@ -37,8 +37,8 @@ function InheritButton({ id }) {
   const { inheritMetadata } = useDepositActions(id);
   const project = useProjectRecord();
   const [open, setOpen] = useState(false);
-  return (
-    <div style={show(project.title && !isPublished(record))}>
+  return project.title && !isPublished(record) ? (
+    <div>
       <hr className="mt-10 mb-20" />
       <div className="text-center">
         <button
@@ -64,7 +64,7 @@ function InheritButton({ id }) {
         </p>
       </DialogModal>
     </div>
-  );
+  ) : null;
 }
 
 InheritButton.propTypes = { id: PropTypes.string.isRequired };
@@ -128,30 +128,34 @@ export function VideoSidebar({ id, onTranscodeInfo }) {
         <p className="text-muted mb-0">
           <strong>Video status:</strong>
         </p>
-        <div style={show(published)}>
-          <p className="text-muted mb-0">
-            <span className="ui label cds-label cds-label-primary">
-              Published
-            </span>
-          </p>
-          <hr className="my-10" />
-          <p className="mt-10">
-            <i className="fa text-muted fa-link" />{" "}
-            <a href={recordUrl}>Visit video page</a>
-          </p>
-        </div>
-        <div style={show(!published)} className="text-muted">
-          <p>
-            The video is <strong>not</strong> published.
-          </p>
-          <ul className="list-unstyled text-left my">
-            <TaskList
-              state={record._cds && record._cds.state}
-              small
-              onTranscodeInfo={onTranscodeInfo}
-            />
-          </ul>
-        </div>
+        {published && (
+          <div>
+            <p className="text-muted mb-0">
+              <span className="ui label cds-label cds-label-primary">
+                Published
+              </span>
+            </p>
+            <hr className="my-10" />
+            <p className="mt-10">
+              <i className="fa text-muted fa-link" />{" "}
+              <a href={recordUrl}>Visit video page</a>
+            </p>
+          </div>
+        )}
+        {!published && (
+          <div className="text-muted">
+            <p>
+              The video is <strong>not</strong> published.
+            </p>
+            <ul className="list-unstyled text-left my">
+              <TaskList
+                state={record._cds && record._cds.state}
+                small
+                onTranscodeInfo={onTranscodeInfo}
+              />
+            </ul>
+          </div>
+        )}
         <InheritButton id={id} />
       </div>
     </div>

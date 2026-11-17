@@ -41,7 +41,9 @@ export function prevent(fn) {
 
 /**
  * Inline style hiding the element when ``condition`` is false. The element
- * stays mounted.
+ * stays in the page: use it only where that matters (a form, an editor or an
+ * iframe keeps its state, CSS selects table rows and cells by position).
+ * Elsewhere, render the element only when it is shown.
  */
 export function show(condition) {
   return { display: condition ? undefined : "none" };
