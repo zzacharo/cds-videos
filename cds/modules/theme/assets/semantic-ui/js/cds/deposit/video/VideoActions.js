@@ -46,6 +46,16 @@ export function VideoActions({ id }) {
     project.category &&
     project.type;
 
+  // Same as the button at the bottom of the form, which can be far below.
+  // Back to the top of the video when it was scrolled out of view.
+  const hideDetails = () => {
+    actions.changeShowAll(true);
+    const panel = document.getElementById(id);
+    if (panel && panel.getBoundingClientRect().top < 0) {
+      panel.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return !deposit.waitingUpload ? (
     <div>
       <DialogModal
@@ -100,6 +110,17 @@ export function VideoActions({ id }) {
             <i className="fa fa-spinner fa-spin text-muted fa-fw" />
           </span>
         )}{" "}
+        {published && deposit.showAll && (
+          <>
+            <button
+              type="button"
+              className="ui small basic button"
+              onClick={hideDetails}
+            >
+              Hide details
+            </button>{" "}
+          </>
+        )}
         {!(record._deposit.status === "published" || record._deposit.pid) && (
           <>
             <button
