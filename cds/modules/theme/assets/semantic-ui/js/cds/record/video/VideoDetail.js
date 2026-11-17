@@ -8,49 +8,32 @@
  * option) any later version.
  */
 
-/* The video page: player, metadata, chapters, downloads and sharing. */
+/*
+ * The video page. ``VideoDetail`` holds the state of the page (the "In this
+ * video" panel, the expanded description, the transcripts and the playback
+ * highlights) and lays out the sections, which only render their props.
+ */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
-import { Tooltip } from "@js/cds/shared/components/Popups";
-import {
-  filterByFields,
-  get,
-  groupBy,
-  isEmpty,
-} from "@js/cds/shared/utils/collections";
-import {
-  findMaster,
-  getVttSubtitles,
-  isPublic,
-} from "@js/cds/shared/utils/records";
-import { formatRelationResourceType, replace } from "@js/cds/shared/utils/text";
-import { formatDate } from "@js/cds/shared/utils/dates";
-import { absoluteURL, previewIframeSrc } from "@js/cds/shared/utils/urls";
-import { isoToLanguage } from "@js/cds/shared/utils/languages";
+import { filterByFields } from "@js/cds/shared/utils/collections";
+import { findMaster, getVttSubtitles } from "@js/cds/shared/utils/records";
 
-import {
-  buildChapterFrames,
-  filterTranscript,
-  parseVttFromUrl,
-  scrollToElement,
-  seekTo,
-} from "./playback";
-import { Downloads } from "./Downloads";
+import { buildChapterFrames, scrollToElement, seekTo } from "./playback";
+import { prepareDescriptions, prepareRelatedIdentifiers } from "./metadata";
+import { useTranscripts } from "./useTranscripts";
 import { InThisVideo, usePlayerHighlights } from "./InThisVideo";
+import { VideoPlayerSection } from "./VideoPlayerSection";
+import { VideoHeader } from "./VideoHeader";
+import { VideoDescription } from "./VideoDescription";
+import { ChaptersSection } from "./Chapters";
+import { TranscriptsTeaser } from "./TranscriptsTeaser";
 import { RelatedEventSection } from "./RelatedEventSection";
 import { Share } from "./Share";
+import { Downloads } from "./Downloads";
 import { TechnicalMetadata } from "./TechnicalMetadata";
-import { DoiBadge, ReportNumberBadge } from "../components/Badges";
 import { Keywords } from "../components/Keywords";
-import { TrustedHtml } from "../components/TrustedHtml";
-import { prepareDescriptions, prepareRelatedIdentifiers } from "./metadata";
-import { sanitize } from "./sanitize";
-import { OtherLicense } from "./Licenses";
-import { Translations } from "./Translations";
-import { ChaptersSection } from "./Chapters";
-import { PlayerFrame } from "./PlayerFrame";
 
 export function VideoDetail({
   record,
@@ -86,44 +69,15 @@ export function VideoDetail({
       : "chapters"
   );
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [transcriptsByLanguage, setTranscriptsByLanguage] = useState({});
-  const [selectedTranscriptLanguage, setSelectedTranscriptLanguage] =
-    useState(null);
-  const [transcript, setTranscript] = useState({});
-  const [transcriptSearch, setTranscriptSearch] = useState("");
-
-  // Load the transcripts, the first loaded one is shown
-  useEffect(() => {
-    let first = true;
-    subtitles.forEach((file) => {
-      const lang = (file.tags && file.tags.language) || "unknown";
-      if (file.links && file.links.self) {
-        parseVttFromUrl(file.links.self).then(
-          (cues) => {
-            setTranscriptsByLanguage((current) => ({
-              ...current,
-              [lang]: cues,
-            }));
-            if (first) {
-              first = false;
-              setTranscript(cues);
-              setSelectedTranscriptLanguage(lang);
-            }
-          },
-          (err) => console.error("VTT parsing failed", err)
-        );
-      } else {
-        console.warn("No subtitle file found.");
-      }
-    });
-    // Load once per record
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [record]);
-
-  const filteredTranscript = useMemo(
-    () => filterTranscript(transcript, transcriptSearch),
-    [transcript, transcriptSearch]
-  );
+  const {
+    transcriptsByLanguage,
+    selectedTranscriptLanguage,
+    selectTranscriptLanguage,
+    transcript,
+    transcriptSearch,
+    setTranscriptSearch,
+    filteredTranscript,
+  } = useTranscripts(record, subtitles);
   const { currentTranscriptLine, currentChapter } = usePlayerHighlights(
     transcript,
     chapters
@@ -140,24 +94,8 @@ export function VideoDetail({
     scrollToElement("inThisVideoSection");
   };
 
-  const onDescriptionClick = (event) => {
-    const link =
-      event.target.closest && event.target.closest("a.timestamp-link");
-    if (link) {
-      event.preventDefault();
-      try {
-        jumpToChapter(parseInt(link.dataset.seconds, 10));
-      } catch (e) {
-        console.error("Could not seek to timestamp:", e);
-      }
-    }
-  };
-
   const withPanel =
     (hasTranscripts || chapters.length > 0) && showInThisVideoSection;
-  const licenses = groupBy(metadata.license, "material", "other");
-  const contributors = groupBy(metadata.contributors, "role");
-  const reportNumber = get(metadata, "report_number[0]");
   const hasIndico =
     filterByFields(metadata.related_identifiers, { scheme: "indico" }).length >
     0;
@@ -171,357 +109,51 @@ export function VideoDetail({
         </div>
       )}
       <div className="cds-detail-video cds-detail-video-wrapper bg-n pb-20">
-        {/* Video Section */}
         {/* As before, the metadata are inside the (black) video section */}
         {metadata.recid && master && master.key && (
           <div className="bg-b">
-            <div
-              className={`video-section${
-                showInThisVideoSection ? " cds-container-fluid" : ""
-              }`}
-              id="videoPlayerSection"
+            <VideoPlayerSection
+              metadata={metadata}
+              master={master}
+              panelOpen={showInThisVideoSection}
+              withPanel={withPanel}
             >
-              <div className={withPanel ? "cds-row" : undefined}>
-                <div className={withPanel ? "cds-col-md-8 pt-20" : undefined}>
-                  <div className="cds-video-iframe text-center">
-                    <PlayerFrame
-                      title={get(metadata, "title.title") || "Video"}
-                      src={previewIframeSrc(metadata.recid, master.key)}
-                    />
-                  </div>
-                </div>
-                <InThisVideo
-                  visible={withPanel}
-                  activeTab={activeTab}
-                  onActiveTab={setActiveTab}
-                  onClose={() => setShowInThisVideoSection(false)}
-                  chapters={chapters}
-                  chapterFrames={chapterFrames}
-                  hasTranscripts={hasTranscripts}
-                  transcriptsByLanguage={transcriptsByLanguage}
-                  selectedTranscriptLanguage={selectedTranscriptLanguage}
-                  onTranscriptLanguage={(lang) => {
-                    setSelectedTranscriptLanguage(lang);
-                    if (transcriptsByLanguage[lang]) {
-                      setTranscript(transcriptsByLanguage[lang]);
-                    } else {
-                      console.warn("Transcript not found for language:", lang);
-                    }
-                  }}
-                  transcriptSearch={transcriptSearch}
-                  onTranscriptSearch={setTranscriptSearch}
-                  filteredTranscript={filteredTranscript}
-                  currentTranscriptLine={currentTranscriptLine}
-                  currentChapter={currentChapter}
-                />
-              </div>
-            </div>
-            {/* Metadata Section */}
+              <InThisVideo
+                visible={withPanel}
+                activeTab={activeTab}
+                onActiveTab={setActiveTab}
+                onClose={() => setShowInThisVideoSection(false)}
+                chapters={chapters}
+                chapterFrames={chapterFrames}
+                hasTranscripts={hasTranscripts}
+                transcriptsByLanguage={transcriptsByLanguage}
+                selectedTranscriptLanguage={selectedTranscriptLanguage}
+                onTranscriptLanguage={selectTranscriptLanguage}
+                transcriptSearch={transcriptSearch}
+                onTranscriptSearch={setTranscriptSearch}
+                filteredTranscript={filteredTranscript}
+                currentTranscriptLine={currentTranscriptLine}
+                currentChapter={currentChapter}
+              />
+            </VideoPlayerSection>
             <div className="cds-container-fluid">
               <div className="cds-row">
                 {/* Left Column */}
                 <div className="cds-col-md-8">
                   <div className="cds-detail cds-detail-video cds-div-shadow bg-w mt-20 pt-10 pb-10">
-                    {/* DOI and report number */}
-                    <div className="px-20">
-                      <div className="cds-row">
-                        <div className="cds-col-md-2">
-                          <ul
-                            className="cds-list-inline"
-                            style={{
-                              display: get(record, "links.project_edit")
-                                ? undefined
-                                : "none",
-                            }}
-                          >
-                            <li>
-                              <a
-                                href={get(record, "links.project_edit")}
-                                title="Edit the record"
-                              >
-                                <i className="fa fa-edit" /> edit
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                        <div className="cds-col-md-10">
-                          <ul className="cds-list-inline text-right">
-                            {isPublic(metadata) ? (
-                              <li>
-                                <Tooltip html="This record is <b>public</b>.">
-                                  <span className="ui label cds-label cds-label-success">
-                                    Public
-                                  </span>
-                                </Tooltip>
-                              </li>
-                            ) : (
-                              <li>
-                                <Tooltip html="This record is <b>restricted</b>.">
-                                  <span className="ui label cds-label cds-label-warning">
-                                    Restricted
-                                  </span>
-                                </Tooltip>
-                              </li>
-                            )}{" "}
-                            {metadata.doi && (
-                              <li>
-                                <DoiBadge record={record} />
-                              </li>
-                            )}{" "}
-                            {reportNumber && (
-                              <li className="pr-0">
-                                <ReportNumberBadge record={record} />
-                              </li>
-                            )}{" "}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Title */}
-                    <div className="cds-detail-title cds-detail-video-title mt-20 px-20">
-                      <hgroup>
-                        <h1 className="mb-0 mt-0 f4 fw-n t-b">
-                          {get(metadata, "title.title")}{" "}
-                          <Translations record={record} />
-                        </h1>
-                      </hgroup>
-                    </div>
-                    {/* Date & Views */}
-                    <div className="cds-detail-date cds-detail-video-date mb-30 px-20 my-20 f8">
-                      <ul className="cds-list-inline mb-0">
-                        <Tooltip html="Copyright">
-                          <li>
-                            <i className="fa fa-copyright text-muted" />{" "}
-                            {get(metadata, "copyright.year")}{" "}
-                            {get(metadata, "copyright.holder")}
-                          </li>
-                        </Tooltip>{" "}
-                        {Object.entries(licenses)
-                          .filter(([material]) => material === "other")
-                          .map(([material, items]) => (
-                            <OtherLicense key={material} licenses={items} />
-                          ))}{" "}
-                        <Tooltip html="Date">
-                          <li>
-                            <i className="fa fa-calendar text-muted" />{" "}
-                            {formatDate(metadata.date, "dd MMMM yyyy")}
-                          </li>
-                        </Tooltip>{" "}
-                        <Tooltip html="Video duration">
-                          <li>
-                            <i className="fa fa-clock-o text-muted" />{" "}
-                            {replace(metadata.duration, ".000", "")}
-                          </li>
-                        </Tooltip>{" "}
-                        <li className="pull-right">{recordViews || 0} Views</li>
-                      </ul>
-                    </div>
+                    <VideoHeader record={record} recordViews={recordViews} />
                     <hr />
-                    {/* Description */}
-                    <div
-                      className="cds-detail-description cds-detail-video-description t-b px-20"
-                      onClick={onDescriptionClick}
-                      role="presentation"
-                    >
-                      <TrustedHtml
-                        as="p"
-                        className="mb-30"
-                        html={
-                          sanitize(
-                            showFullDescription
-                              ? fullDescription
-                              : shortDescription
-                          ) || "No description"
-                        }
-                      />
-                      {/* Hidden content */}
-                      <div
-                        className="mt-20"
-                        style={{
-                          display: showFullDescription ? undefined : "none",
-                        }}
-                      >
-                        {/* Contributors */}
-                        <div className="mb-20">
-                          <p>
-                            <strong>Contributors</strong>
-                          </p>
-                          {Object.entries(contributors).map(
-                            ([role, contribs]) => (
-                              <div className="pl-10" key={role}>
-                                <p>{role}: </p>
-                                <ul>
-                                  {contribs.map((contrib, index) => (
-                                    <li key={index}>
-                                      <a
-                                        href={`/search?q=contributors.name:"${contrib.name}"`}
-                                      >
-                                        {contrib.name}
-                                      </a>{" "}
-                                      {contrib.affiliations
-                                        ? " - " + contrib.affiliations.join(",")
-                                        : ""}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )
-                          )}
-                        </div>
-                        <div className="mb-10">
-                          {/* License */}
-                          {(metadata.license || []).length > 1 && (
-                            <div className="mb-0">
-                              <p>
-                                <strong>Licences</strong>
-                              </p>
-                              {Object.entries(licenses)
-                                .filter(([material]) => material !== "other")
-                                .map(([material, items]) => (
-                                  <div className="pl-10" key={material}>
-                                    <p>{material}:</p>
-                                    <ul>
-                                      {items
-                                        .filter(
-                                          (license) =>
-                                            license.license || license.credit
-                                        )
-                                        .map((license, index) => (
-                                          <li key={index}>
-                                            {license.credit && (
-                                              <span>{license.credit}</span>
-                                            )}
-                                            {!license.credit &&
-                                              license.license && (
-                                                <span>
-                                                  <a
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    href={license.url}
-                                                  >
-                                                    {license.license}
-                                                  </a>
-                                                </span>
-                                              )}
-                                          </li>
-                                        ))}
-                                    </ul>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                          <div className="mt-30">
-                            <ul className="cds-list-inline pt-20 f8">
-                              {metadata.language && (
-                                <Tooltip html="Video Language">
-                                  <li>
-                                    <i className="fa fa-globe text-muted" />{" "}
-                                    <a
-                                      href={`/search?q=language:"${metadata.language}"`}
-                                    >
-                                      {isoToLanguage(metadata.language)}
-                                    </a>
-                                  </li>
-                                </Tooltip>
-                              )}{" "}
-                              {metadata.language &&
-                                (get(record, "links.project_html") ||
-                                  metadata._project_id) && <li>·</li>}{" "}
-                              {(get(record, "links.project_html") ||
-                                metadata._project_id) && (
-                                <li>
-                                  <i className="fa fa-list-ul text-muted" />{" "}
-                                  <a
-                                    href={
-                                      get(record, "links.project_html") ||
-                                      "/search?q=_project_id:" +
-                                        metadata._project_id
-                                    }
-                                  >
-                                    More videos in the project
-                                  </a>
-                                </li>
-                              )}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Related links */}
-                      {(metadata.related_links || []).length > 0 && (
-                        <div>
-                          <strong>Related links</strong>
-                          {metadata.related_links.map((relatedLink, index) => (
-                            <ul key={index}>
-                              <li>
-                                <a
-                                  href={absoluteURL(relatedLink.url)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  {relatedLink.name}
-                                </a>
-                              </li>
-                            </ul>
-                          ))}
-                        </div>
-                      )}
-                      {/* Related identifiers */}
-                      {!isEmpty(groupedRelatedIdentifiers) && (
-                        <div>
-                          <strong>Related identifiers</strong>
-                          <ul>
-                            {Object.entries(groupedRelatedIdentifiers).map(
-                              ([relationType, items]) => (
-                                <li key={relationType}>
-                                  <strong>
-                                    {formatRelationResourceType(relationType)}
-                                  </strong>
-                                  <ul>
-                                    {items.map((ri, index) => (
-                                      <li key={index}>
-                                        {ri.resource_type && (
-                                          <span>
-                                            {formatRelationResourceType(
-                                              ri.resource_type
-                                            )}
-                                            :{" "}
-                                          </span>
-                                        )}
-                                        <a
-                                          className="cds-text-break"
-                                          href={ri.url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                        >
-                                          {ri.identifier}
-                                        </a>{" "}
-                                        ({ri.scheme})
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      <div
-                        className="text-center"
-                        style={{
-                          display: showFullDescription ? "none" : undefined,
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="cds-btn-link cds-btn-sm"
-                          onClick={() =>
-                            setShowFullDescription(!showFullDescription)
-                          }
-                        >
-                          {showFullDescription ? "Show less" : "Show more"}
-                        </button>
-                      </div>
-                    </div>
+                    <VideoDescription
+                      record={record}
+                      shortDescription={shortDescription}
+                      fullDescription={fullDescription}
+                      groupedRelatedIdentifiers={groupedRelatedIdentifiers}
+                      expanded={showFullDescription}
+                      onToggle={() =>
+                        setShowFullDescription(!showFullDescription)
+                      }
+                      onJump={jumpToChapter}
+                    />
 
                     {/* Chapters Section */}
                     {chapters.length > 0 && (
@@ -535,29 +167,10 @@ export function VideoDetail({
 
                     {/* More */}
                     <div className="cds-detail-more cds-detail-video-more px-20">
-                      <div
-                        className="mb-20"
-                        style={{ display: hasTranscripts ? undefined : "none" }}
-                      >
-                        <hr />
-                        <div className="transcription-text">
-                          <h3>
-                            <strong>Transcriptions</strong>
-                          </h3>
-                          <small className="text-muted">
-                            Follow along or search within the transcript.
-                          </small>
-                        </div>
-                        <div className="transcription-button-wrapper pt-10">
-                          <button
-                            type="button"
-                            className="ui small basic button transcription-button"
-                            onClick={() => toggleInThisVideo("transcript")}
-                          >
-                            Show Transcriptions
-                          </button>
-                        </div>
-                      </div>
+                      <TranscriptsTeaser
+                        visible={hasTranscripts}
+                        onShow={() => toggleInThisVideo("transcript")}
+                      />
                       {hasIndico && (
                         <RelatedEventSection
                           record={record}
