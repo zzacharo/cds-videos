@@ -21,11 +21,11 @@ import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { LoadingBar } from "../components/LoadingBar";
-import { VIDEO_PLACEHOLDERS } from "../components/Placeholders";
-import { SearchBarSuggestions } from "../components/SearchBarSuggestions";
-import { VIDEO_TEMPLATES } from "../components/VideoTemplates";
-import { parseJSON } from "../dom";
+import { LoadingBar } from "@js/cds/shared/components/LoadingBar";
+import { VIDEO_PLACEHOLDERS } from "./Placeholders";
+import { SearchBarSuggestions } from "@js/cds/header/SearchBarSuggestions";
+import { VIDEO_TEMPLATES } from "./VideoTemplates";
+import { parseJSON } from "@js/cds/shared/dom";
 import {
   DepositSearchFacets,
   SearchCount,

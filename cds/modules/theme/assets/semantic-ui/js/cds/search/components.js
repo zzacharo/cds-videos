@@ -22,8 +22,8 @@ import {
   collectionLabel,
   isoToLanguage,
   joinArray,
-} from "../utils";
-import { FacetsPlaceholder, LinePlaceholder } from "../components/Placeholders";
+} from "@js/cds/shared/utils";
+import { FacetsPlaceholder, LinePlaceholder } from "./Placeholders";
 import { useSearch } from "./hooks";
 
 // The year histogram draws with d3 (about 150 KB): load it with the first
