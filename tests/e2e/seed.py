@@ -10,10 +10,17 @@
 
 """Records for the end to end tests.
 
-Creates two projects of the test user, a published one with two videos
-and a draft one with a video, with the files of processed videos (master
-file, subformats, frames, subtitles and an additional file), and indexes
-them. It needs the users, the categories and the licenses of
+Creates the projects of the test user, with the files of processed videos
+(master file, subformats, frames, subtitles and an additional file), and
+indexes them:
+
+- a published project with two videos,
+- a draft project with a video,
+- a published project with a video, both restricted to the e-group
+  ``e2e-readers@cern.ch``, for the access tests,
+- a draft project with a video, whose restrictions and editors the access
+  tests change.
+ It needs the users, the categories and the licenses of
 ``tests/e2e/setup.sh`` and runs in the environment of the instance::
 
     python tests/e2e/seed.py
@@ -63,6 +70,12 @@ CONTRIBUTORS = [
 ]
 
 LICENSE = [{"license": "CERN", "url": "http://copyright.web.cern.ch"}]
+
+# The e-group of the restricted project (a role of setup.sh)
+READERS = "e2e-readers@cern.ch"
+
+# The draft of the access tests (tests/e2e/specs/access.spec.js)
+ACCESS_DRAFT = "Access settings draft"
 
 
 def frame(index):
@@ -190,22 +203,32 @@ def keywords(*names):
     return [{"name": name, "key_id": ids[name]} for name in names]
 
 
-def create_project(metadata, videos):
-    """A draft project with processed videos: (metadata, subtitles) pairs."""
+def create_project(metadata, videos, access=None):
+    """A draft project with processed videos: (metadata, subtitles) pairs.
+
+    The project and its videos have the given access (editable by the test
+    user by default).
+    """
     from cds.modules.deposit.api import Project, Video
+
+    access = access or {"update": ["test@test.ch"]}
+
+    def copy_access():
+        return {action: list(names) for action, names in access.items()}
 
     project = Project.create(
         dict(
             metadata,
             contributors=CONTRIBUTORS[:1],
             license=LICENSE,
-            _access={"update": ["test@test.ch"]},
+            _access=copy_access(),
         )
     ).commit()
     for video_metadata, subtitles in videos:
         video = Video.create(
             dict(
                 video_metadata,
+                _access=copy_access(),
                 _project_id=project["_deposit"]["id"],
                 contributors=CONTRIBUTORS,
                 copyright={"holder": "CERN", "year": "2026"},
@@ -279,6 +302,47 @@ def seed():
                     "date": "2026-02-01",
                 },
                 True,
+            )
+        ],
+    )
+
+    restricted = create_project(
+        {
+            "title": {"title": "Restricted end to end tests"},
+            "description": "A project only the e2e readers can see.",
+            "category": "CERN",
+            "type": "VIDEO",
+            "date": "2026-01-20",
+        },
+        [
+            (
+                {
+                    "title": {"title": "Confidential briefing"},
+                    "description": "A video only the e2e readers can watch.",
+                    "date": "2026-01-20",
+                },
+                False,
+            )
+        ],
+        access={"read": [READERS], "update": ["test@test.ch"]},
+    )
+    restricted.publish().commit()
+    db.session.commit()
+    create_project(
+        {
+            "title": {"title": ACCESS_DRAFT},
+            "description": "The access tests change who can see and edit it.",
+            "category": "CERN",
+            "type": "VIDEO",
+        },
+        [
+            (
+                {
+                    "title": {"title": "Video of the access settings draft"},
+                    "description": "Everything is processed.",
+                    "date": "2026-02-02",
+                },
+                False,
             )
         ],
     )

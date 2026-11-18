@@ -1,7 +1,8 @@
 # End to end tests
 
 Playwright tests of the user facing pages of CDS Videos: home page, search,
-video and project pages, exports, login, the uploads list and the upload form.
+video and project pages, exports, login, the uploads list and the upload form,
+and who can see the records and edit the deposits.
 
 The same specs run against two interfaces of one local instance:
 
@@ -33,9 +34,16 @@ data, and skip the checks the data does not allow.
 
 `setup.sh` prepares such an instance on empty services: the database, the
 indices, the users and fixtures of `scripts/setup` (without the keywords
-harvested from home.cern) and the records of `seed.py`, a published project
-with two videos and a draft project with one, all with the files of processed
-videos.
+harvested from home.cern), the users of the access tests and the records of
+`seed.py`, all with the files of processed videos:
+
+- a published project with two videos and a draft project with one,
+- a published project with a video, both restricted to the e-group
+  `e2e-readers@cern.ch` (a role of the reader user),
+- a draft project with a video, "Access settings draft", whose restrictions
+  and editors `specs/access.spec.js` changes and resets.
+
+`specs/access.spec.js` skips its tests when these records are missing.
 
 ```bash
 ./tests/e2e/setup.sh    # from the root of the repository, in the virtualenv
@@ -52,14 +60,17 @@ failure the job uploads the HTML report, the traces and the server log as the
 
 ## Settings
 
-| Variable                                | Default                   |
-| --------------------------------------- | ------------------------- |
-| `E2E_ANGULARJS_URL`                     | `https://127.0.0.1:5000`  |
-| `E2E_REACT_URL`                         | `https://127.0.0.1:5001`  |
-| `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`   | `test@test.ch`, `123456`  |
-| `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` | `admin@test.ch`, `123456` |
-| `E2E_CHANNEL`                           | Playwright's Chromium     |
-| `E2E_WORKERS`                           | `2`                       |
+| Variable                                  | Default                    |
+| ----------------------------------------- | -------------------------- |
+| `E2E_ANGULARJS_URL`                       | `https://127.0.0.1:5000`   |
+| `E2E_REACT_URL`                           | `https://127.0.0.1:5001`   |
+| `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`     | `test@test.ch`, `123456`   |
+| `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`   | `admin@test.ch`, `123456`  |
+| `E2E_READER_EMAIL`, `E2E_READER_PASSWORD` | `reader@test.ch`, `123456` |
+| `E2E_OTHER_EMAIL`, `E2E_OTHER_PASSWORD`   | `other@test.ch`, `123456`  |
+| `E2E_READERS_EGROUP`                      | `e2e-readers@cern.ch`      |
+| `E2E_CHANNEL`                             | Playwright's Chromium      |
+| `E2E_WORKERS`                             | `2`                        |
 
 ## Writing tests
 
@@ -72,3 +83,7 @@ failure the job uploads the HTML report, the traces and the server log as the
 - `specs/deposit.spec.js` uploads `data/clip.mp4` (a 2 second test clip) as
   the admin user, then deletes the project it created, also when the test
   fails midway.
+- `specs/access.spec.js` uses four users: the owner of the records (`user`),
+  an admin, a member of the e-group of the restricted record without the
+  upload permission (`reader`), and a user who can upload but has no access
+  to the records of the others (`other`). The form test runs on `react` only.
