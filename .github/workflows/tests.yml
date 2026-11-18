@@ -28,9 +28,13 @@ on:
 jobs:
   Tests:
     runs-on: ubuntu-22.04
+    # Python 3.15 is not supported yet: its job may fail without failing the
+    # workflow
+    continue-on-error: ${{ matrix.experimental == true }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.14"]
+        python-version: ["3.14", "3.15"]
         db-service: [postgresql14]
         search-service: [opensearch2]
         cache-service: [redis]
@@ -38,6 +42,8 @@ jobs:
         include:
           - db-service: postgresql14
             DB_EXTRAS: "postgresql"
+          - python-version: "3.15"
+            experimental: true
 
     env:
       DB: ${{ matrix.db-service }}
