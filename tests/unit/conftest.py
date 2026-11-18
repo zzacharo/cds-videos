@@ -648,7 +648,7 @@ def project_published(api_app, api_project, users):
     (project, video_1, video_2) = api_project
     with api_app.test_request_context():
         # login as user_1
-        login_user(db.session.get(User, users[0]))
+        login_user(db_.session.get(User, users[0]))
         prepare_videos_for_publish([video_1, video_2])
         new_project = project.publish()
         new_videos = [record_resolver.resolve(id_)[1] for id_ in new_project.video_ids]
@@ -665,7 +665,7 @@ def api_project_published(api_app, api_project, users):
     """New published project with videos."""
     (project, video_1, video_2) = api_project
     with api_app.test_request_context():
-        login_user(db.session.get(User, users[0]))
+        login_user(db_.session.get(User, users[0]))
         prepare_videos_for_publish([video_1, video_2])
         new_project = project.publish()
         new_videos = [record_resolver.resolve(id_)[1] for id_ in new_project.video_ids]
