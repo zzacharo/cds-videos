@@ -95,6 +95,7 @@ def app():
     app = create_app(
         DEBUG_TB_ENABLED=False,
         TESTING=True,
+        SECRET_KEY="test-secret-key",
         CELERY_TASK_ALWAYS_EAGER=True,
         SQLALCHEMY_DATABASE_URI=os.environ.get(
             "SQLALCHEMY_DATABASE_URI",

@@ -561,6 +561,7 @@ def mock_compute_status(cls, statuses):
 
 
 class TestFlow(FlowService):
+    __test__ = False  # a flow for the tests, not a test class
 
     def build_steps(self):
         self._tasks.append((sse_simple_add(), {"x": 1, "y": 2}))
