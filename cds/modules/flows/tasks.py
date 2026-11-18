@@ -1257,7 +1257,7 @@ def patch_record(recid, patch, validator=None):
     """Patch a record."""
     with db.session.begin_nested():
         record = Record.get_record(recid)
-        record = record.patch(patch)
+        record = Record(jsonpatch.apply_patch(dict(record), patch), model=record.model)
         if validator:
             validator = import_string(validator)
         record.commit(validator=validator)
