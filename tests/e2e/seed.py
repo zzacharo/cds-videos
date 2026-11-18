@@ -332,7 +332,9 @@ def seed():
         {
             "title": {"title": ACCESS_DRAFT},
             "description": "The access tests change who can see and edit it.",
-            "category": "CERN",
+            # The form needs the category: the others are only readable by
+            # their e-groups
+            "category": "OPEN",
             "type": "VIDEO",
         },
         [
