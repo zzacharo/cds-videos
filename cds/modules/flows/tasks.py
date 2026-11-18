@@ -788,7 +788,7 @@ class ExtractChapterFramesTask(AVCTask):
 
         # If no valid chapter seconds, remove the chapters.vtt file
         if not valid_chapter_seconds:
-            master_obj = ObjectVersion.query.get(version_id)
+            master_obj = db.session.get(ObjectVersion, version_id)
             vtt_objs = ObjectVersion.get_versions(master_obj.bucket_id, "chapters.vtt")
             for vtt_obj in vtt_objs:
                 dispose_object_version(vtt_obj)

@@ -276,7 +276,7 @@ def new_project(app, users, db, deposit_metadata, project_data=None):
     project_video_2.update(deposit_metadata)
     indexer = RecordIndexer()
     with app.test_request_context():
-        login_user(User.query.get(users[0]))
+        login_user(db.session.get(User, users[0]))
 
         # create empty project
         project = Project.create(project_data).commit()

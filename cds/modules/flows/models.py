@@ -104,7 +104,7 @@ class FlowMetadata(db.Model, Timestamp):
     @classmethod
     def get(cls, id_):
         """Get a flow object from the DB."""
-        return cls.query.get(id_)
+        return db.session.get(cls, id_)
 
     @classmethod
     def create(
@@ -296,7 +296,7 @@ class FlowTaskMetadata(db.Model, Timestamp):
     @classmethod
     def get(cls, id_):
         """Get a task object from the DB."""
-        return cls.query.get(id_)
+        return db.session.get(cls, id_)
 
     @classmethod
     def get_all_by_flow_task_name(cls, flow_id, name):
