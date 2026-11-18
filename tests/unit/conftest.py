@@ -158,8 +158,10 @@ def api_app(app):
 @pytest.yield_fixture()
 def db(app):
     """Setup database."""
-    if not database_exists(str(db_.engine.url)):
-        create_database(str(db_.engine.url))
+    # str() of a SQLAlchemy 2 URL hides the password ("***")
+    db_url = db_.engine.url.render_as_string(hide_password=False)
+    if not database_exists(db_url):
+        create_database(db_url)
     db_.create_all()
     yield db_
     db_.session.remove()
