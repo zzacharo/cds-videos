@@ -12,11 +12,29 @@ const {
   login,
   getJSON,
   recordTitle,
+  strapOptions,
   JSON_HEADERS,
 } = require("../support");
 
-// The draft whose restrictions and editors the tests change (seed.py)
+// The drafts of seed.py: the tests change the restrictions and editors of
+// the first one, the second one is in a category the other user cannot read
 const ACCESS_DRAFT = "Access settings draft";
+const SHARED_DRAFT = "Draft shared with the other user";
+
+// A project of the uploads of the logged in user
+async function findDraft(request, title) {
+  const api = await getJSON(request, "/api/deposits/project/?size=100");
+  return api.hits.hits.find(
+    (hit) => hit.metadata.title && hit.metadata.title.title === title
+  );
+}
+
+// The categories that the logged in user can read, which are records
+// restricted to e-groups (all but OPEN in the fixtures)
+async function categoryNames(request) {
+  const api = await getJSON(request, "/api/categories/?size=100");
+  return api.hits.hits.map((hit) => hit.metadata.name).sort();
+}
 
 async function status(request, url) {
   const response = await request.get(url, { headers: JSON_HEADERS });
@@ -216,13 +234,7 @@ test.describe("restrictions and editors of a project", () => {
     );
     test.setTimeout(2 * 60 * 1000);
     await login(page, users.user);
-    const drafts = await getJSON(
-      page.request,
-      "/api/deposits/project/?size=100"
-    );
-    const draft = drafts.hits.hits.find(
-      (hit) => hit.metadata.title && hit.metadata.title.title === ACCESS_DRAFT
-    );
+    const draft = await findDraft(page.request, ACCESS_DRAFT);
     test.skip(!draft, `no "${ACCESS_DRAFT}" project (see seed.py)`);
     const { id } = draft;
     const access = async () =>
@@ -296,5 +308,45 @@ test.describe("restrictions and editors of a project", () => {
       expect(await otherStatus()).toBe(403);
     });
     await context.close();
+  });
+});
+
+test.describe("categories of a project", () => {
+  for (const role of ["user", "admin"]) {
+    test(`are the ones the ${role} can read`, async ({ page, ui, users }) => {
+      await login(page, users[role]);
+      const names = await categoryNames(page.request);
+      expect(names.includes("CERN")).toBe(role === "admin");
+      // A draft of the user, which the admins can edit too
+      const draft = await findDraft(page.request, ACCESS_DRAFT);
+      test.skip(!draft, `no "${ACCESS_DRAFT}" project (see seed.py)`);
+      await page.goto(`/deposit/project/${draft.id}`);
+      expect((await strapOptions(page, ui, 0)).sort()).toEqual(names);
+    });
+  }
+
+  test("cannot be read by the editors outside of their e-groups", async ({
+    page,
+    users,
+  }) => {
+    await login(page, users.other);
+    expect(await categoryNames(page.request)).not.toContain("CERN");
+    const draft = await findDraft(page.request, SHARED_DRAFT);
+    test.skip(!draft, `no "${SHARED_DRAFT}" project (see seed.py)`);
+    expect(draft.metadata.category).toBe("CERN");
+    const response = await page.goto(`/deposit/project/${draft.id}`);
+    expect(response.status()).toBe(200);
+    await page.getByRole("button", { name: "Show details" }).first().click();
+    // They edit the project, but without the access rules of its category
+    // they cannot change its restrictions
+    await expect(
+      page.locator("input[name=title]:visible").first()
+    ).toBeEnabled();
+    await expect(
+      page
+        .getByRole("heading", { name: "Project restrictions when published" })
+        .locator("xpath=..")
+        .locator("select")
+    ).toBeDisabled();
   });
 });

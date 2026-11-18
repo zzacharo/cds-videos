@@ -200,6 +200,30 @@ async function strapSelect(page, ui, index, label) {
   }
 }
 
+// The labels of the options of a strap select (index 0 or 1)
+async function strapOptions(page, ui, index) {
+  if (ui === "angularjs") {
+    await page
+      .locator(".cds-deposit-strap-select button:visible")
+      .nth(index)
+      .click();
+    const options = page.locator("ul.dropdown-menu:visible a");
+    await expect(options.first()).toBeVisible();
+    const labels = await options.allTextContents();
+    await page.keyboard.press("Escape");
+    return labels.map((label) => label.trim());
+  }
+  const dropdown = page
+    .locator(".cds-deposit-strap-select .ui.dropdown:visible")
+    .nth(index);
+  await dropdown.click();
+  const options = dropdown.getByRole("option");
+  await expect(options.first()).toBeVisible();
+  const labels = await options.allTextContents();
+  await page.keyboard.press("Escape");
+  return labels.map((label) => label.trim());
+}
+
 // The title of a record page
 function recordTitle(page, title) {
   return page.getByRole("heading", { level: 1, name: title, exact: true });
@@ -232,6 +256,7 @@ module.exports = {
   selectSort,
   sortControl,
   strapSelect,
+  strapOptions,
   recordTitle,
   facetValue,
   escapeRegExp,

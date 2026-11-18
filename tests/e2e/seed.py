@@ -19,7 +19,9 @@ indexes them:
 - a published project with a video, both restricted to the e-group
   ``e2e-readers@cern.ch``, for the access tests,
 - a draft project with a video, whose restrictions and editors the access
-  tests change.
+  tests change,
+- a draft project with a video in the CERN category, shared with the other
+  user, who cannot read that category.
  It needs the users, the categories and the licenses of
 ``tests/e2e/setup.sh`` and runs in the environment of the instance::
 
@@ -74,8 +76,9 @@ LICENSE = [{"license": "CERN", "url": "http://copyright.web.cern.ch"}]
 # The e-group of the restricted project (a role of setup.sh)
 READERS = "e2e-readers@cern.ch"
 
-# The draft of the access tests (tests/e2e/specs/access.spec.js)
+# The drafts of the access tests (tests/e2e/specs/access.spec.js)
 ACCESS_DRAFT = "Access settings draft"
+SHARED_DRAFT = "Draft shared with the other user"
 
 
 def frame(index):
@@ -347,6 +350,26 @@ def seed():
                 False,
             )
         ],
+    )
+
+    create_project(
+        {
+            "title": {"title": SHARED_DRAFT},
+            "description": "The other user can edit it.",
+            "category": "CERN",
+            "type": "VIDEO",
+        },
+        [
+            (
+                {
+                    "title": {"title": "Video of the shared draft"},
+                    "description": "Everything is processed.",
+                    "date": "2026-02-03",
+                },
+                False,
+            )
+        ],
+        access={"update": ["test@test.ch", "other@test.ch"]},
     )
 
     ids = [str(record.id) for record in RecordMetadata.query.all()]

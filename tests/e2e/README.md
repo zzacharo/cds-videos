@@ -40,8 +40,13 @@ harvested from home.cern), the users of the access tests and the records of
 - a published project with two videos and a draft project with one,
 - a published project with a video, both restricted to the e-group
   `e2e-readers@cern.ch` (a role of the reader user),
-- a draft project with a video, "Access settings draft", whose restrictions
-  and editors `specs/access.spec.js` changes and resets.
+- a draft project with a video, "Access settings draft", in the OPEN
+  category, whose restrictions and editors `specs/access.spec.js` changes and
+  resets,
+- a draft project with a video in the CERN category, shared with the other
+  user. The categories are records readable by their e-groups only (all but
+  OPEN in the fixtures), so the other user can edit it but not change its
+  restrictions.
 
 `specs/access.spec.js` skips its tests when these records are missing.
 
