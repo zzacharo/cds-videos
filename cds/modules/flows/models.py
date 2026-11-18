@@ -33,8 +33,9 @@ from invenio_db import db
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy_utils.models import Timestamp
 from sqlalchemy_utils.types import JSONType, UUIDType
+
+from cds.modules.utc import Timestamp
 
 logger = logging.getLogger("cds-flow")
 
